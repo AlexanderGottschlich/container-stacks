@@ -1,0 +1,75 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nextcloud
+      POSTGRES_USER: nextcloud
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - nc_db:/var/lib/postgresql/data
+    networks:
+      - nc_net
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks:
+      - nc_net
+
+  app:
+    image: nextcloud:32-apache
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_DB: nextcloud
+      POSTGRES_USER: nextcloud
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: redis
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
+      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
+      NEXTCLOUD_TRUSTED_DOMAINS: nc2.elastic2ls.com
+      OVERWRITEPROTOCOL: https
+      OVERWRITECLIURL: https://nc2.elastic2ls.com
+    volumes:
+      - nc_app:/var/www/html
+      - nc_data:/var/www/html/data
+    networks:
+      - nc_net
+      - proxy_net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy_net"
+      - "traefik.http.routers.nextcloud.rule=Host(`nc2.elastic2ls.com`)"
+      - "traefik.http.routers.nextcloud.entrypoints=websecure"
+      - "traefik.http.routers.nextcloud.tls.certresolver=le"
+      - "traefik.http.services.nextcloud.loadbalancer.server.port=80"
+
+  cron:
+    image: nextcloud:32-apache
+    restart: unless-stopped
+    entrypoint: /cron.sh
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_DB: nextcloud
+      POSTGRES_USER: nextcloud
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: redis
+    volumes:
+      - nc_app:/var/www/html
+      - nc_data:/var/www/html/data
+    networks:
+      - nc_net
+
+networks:
+  nc_net:
+    driver: bridge
+  proxy_net:
+    external: true
+
+volumes:
+  nc_db:
+  nc_app:
+  nc_data:
