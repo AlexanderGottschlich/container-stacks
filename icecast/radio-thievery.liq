@@ -1,11 +1,11 @@
 # Logs auf STDOUT
 set("log.stdout", true)
-set("log.level", 3)
+set("log.level", 1)
 
 # Playlist aus /music, zufällige Wiedergabe
 music = playlist(
   mode = "shuffle",
-  reload_mode = "watch",
+#  reload_mode = "watch",
   "/music"
 )
 
