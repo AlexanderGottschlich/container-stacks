@@ -18,6 +18,9 @@ services:
       ICECAST_PASSWORD: changeme
       ICECAST_RELAY_PASSWORD: changeme
 
+    networks:
+      - mediahub_net
+
   liquidsoap_foo:
     image: savonet/liquidsoap:v2.3.0
     container_name: icecast-liquidsoap
@@ -32,6 +35,10 @@ services:
     environment:
       - TZ=Europe/Berlin
     command: ["liquidsoap", "/etc/liquidsoap/radio.liq"]
+
+    networks:
+      - mediahub_net
+
 
 volumes:
   logs:
