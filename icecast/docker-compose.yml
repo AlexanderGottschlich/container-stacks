@@ -29,7 +29,7 @@ services:
       - icecast
 
     volumes:
-      - "${PWD}/Downloads/Foo Fighters - Discography:/music:ro"
+      - "${HOME_DIR}/Downloads/Foo Fighters - Discography:/music:ro"
       - "./radio.liq:/etc/liquidsoap/radio.liq:ro"
 
     environment:
