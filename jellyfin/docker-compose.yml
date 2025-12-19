@@ -1,0 +1,30 @@
+services:
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    container_name: jellyfin
+    restart: unless-stopped
+
+    ports:
+      - "8096:8096"
+
+    environment:
+      - TZ=Europe/Berlin
+      - PUID=1000
+      - PGID=1000
+
+    devices:
+      - /dev/dri:/dev/dri
+
+    group_add:
+      - "44"    # video
+      - "992"   # render
+
+    volumes:
+      - config:/config
+      - cache:/cache
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/home/agottschlich/media:/media:ro"
+
+volumes:
+  config:
+  cache:
