@@ -21,7 +21,7 @@ output.icecast(
   host        = "icecast",
   port        = 8000,
   password    = "changeme",
-  mount       = "radio",
+  mount       = "foofighters",
   name        = "Foo Fighters Radio",
   description = "Privater Icecast-Stream mit Titelanzeige",
   genre       = "Rock",

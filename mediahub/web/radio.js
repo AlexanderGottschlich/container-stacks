@@ -1,48 +1,35 @@
-/* radio.js */
 (function () {
-  // ========= Stationen =========
-const STATIONS = [
-  {
-    id: "ff",
-    name: "Foo Fighters Radio",
-    stream: "/radio",
-    status: "/status-json.xsl",
-    mount: "/radio",
-    colorClass: "radio-color-youtube",
-  },
-  {
-    id: "th",
-    name: "Thievery Corporation Radio",
-    stream: "/thievery",
-    status: "/status-json.xsl",
-    mount: "/thievery",
-    colorClass: "radio-color-blue", // oder eine neue Klasse
-  },
-];
-
+  const STATIONS = [
+    {
+      id: "ff",
+      name: "Foo Fighters Radio",
+      stream: "/foofighters",
+      status: "/status-json.xsl",
+      mount: "/foofighters",
+      colorClass: "radio-color-youtube",
+    },
+    {
+      id: "th",
+      name: "Thievery Corporation Radio",
+      stream: "/thievery",
+      status: "/status-json.xsl",
+      mount: "/thievery",
+      colorClass: "radio-color-blue",
+    },
+  ];
 
   const grid = document.getElementById("radioGrid");
   const audio = document.getElementById("audio");
   const globalNow = document.getElementById("globalNow");
 
-  // ---------- Helpers ----------
-  function setText(el, text) {
+  function setText(el, value) {
     if (!el) return;
-    el.textContent = (text && String(text).trim()) ? String(text).trim() : "";
+    const v = (value || "").toString().trim();
+    el.textContent = v;
   }
 
-  function setPlayingTile(activeId) {
-    const tiles = grid.querySelectorAll(".radio-tile");
-    tiles.forEach(t => {
-      const isActive = t.dataset.stationId === activeId && !audio.paused;
-      t.classList.toggle("is-playing", isActive);
-    });
-  }
-
-  // ---------- Render ----------
   function render() {
     grid.innerHTML = "";
-
     STATIONS.forEach((s, idx) => {
       const tile = document.createElement("div");
       tile.className = "tile radio-tile";
@@ -59,7 +46,7 @@ const STATIONS = [
       const now = document.createElement("div");
       now.className = "radio-now";
       now.id = `now-${s.id}`;
-      now.textContent = ""; // kein Platzhalter
+      now.textContent = ""; // leer statt Platzhalter
 
       inner.appendChild(name);
       inner.appendChild(now);
@@ -79,45 +66,58 @@ const STATIONS = [
     });
   }
 
-  // ---------- Player ----------
   async function toggleStation(station) {
     const active = audio.dataset.activeStation;
 
-    // gleiche Station: Play/Pause
+    // wenn gleiche Station aktiv: Toggle Play/Pause
     if (active === station.id) {
       if (audio.paused) {
-        try { await audio.play(); } catch (e) {}
+        try { await audio.play(); } catch (_) {}
       } else {
         audio.pause();
       }
-      setPlayingTile(active);
       return;
     }
 
     // neue Station starten
-    audio.src = station.stream;
     audio.dataset.activeStation = station.id;
+    audio.src = station.stream;
 
-    try { await audio.play(); } catch (e) {}
+    try { await audio.play(); } catch (_) {}
 
-    // sofort Titel aktualisieren
-    pollStation(station);
-
-    setPlayingTile(station.id);
+    // globalNow sofort auf aktuelle Tile-Anzeige setzen (falls vorhanden)
+    const t = document.getElementById(`now-${station.id}`)?.textContent?.trim();
+    setText(globalNow, t || "");
   }
 
-  // ---------- Icecast: Now Playing ----------
-  function extractNowPlaying(data) {
-    const stats = data?.icestats;
+  function extractNowPlaying(data, mountPath) {
+    const stats = data && data.icestats ? data.icestats : null;
     if (!stats || !stats.source) return null;
 
     const sources = Array.isArray(stats.source) ? stats.source : [stats.source];
-    const s = sources[0];
 
-    const title =
-      (s.title || s.yp_currently_playing || s.streamtitle || "")
-        .toString()
-        .trim();
+    // mountPath erwartet "/foofighters" oder "/thievery"
+    const want = (mountPath || "").toString().trim();
+    const wantNoSlash = want.startsWith("/") ? want.slice(1) : want;
+
+    // robustes Matching:
+    // 1) listenurl Pfad endet mit "/<mount>"
+    // 2) mount Feld (falls vorhanden) matcht "/<mount>" oder "<mount>"
+    // 3) server_name matcht grob (optional)
+    let match =
+      sources.find(s => {
+        const lu = (s.listenurl || "").toString();
+        return want && lu.endsWith(want);
+      }) ||
+      sources.find(s => {
+        const m = (s.mount || "").toString();
+        return m === want || m === wantNoSlash || (want && m.endsWith(want));
+      }) ||
+      sources[0];
+
+    const title = (match.title || match.yp_currently_playing || match.streamtitle || "")
+      .toString()
+      .trim();
 
     return title || null;
   }
@@ -131,25 +131,18 @@ const STATIONS = [
       if (!res.ok) throw new Error("HTTP " + res.status);
       const data = await res.json();
 
-      const title = extractNowPlaying(data);
+      const title = extractNowPlaying(data, station.mount);
 
-      // Tile immer aktualisieren
-      setText(target, title);
+      // Tile: leer statt Platzhalter
+      setText(target, title || "");
 
-      // Global anzeigen:
-      // - wenn Station aktiv ist
-      // - oder wenn noch nichts angezeigt wird
-      if (
-        audio.dataset.activeStation === station.id ||
-        !globalNow.textContent
-      ) {
-        setText(globalNow, title);
-      }
-    } catch (e) {
-      setText(target, "");
+      // Wenn Station aktiv ist: global spiegeln
       if (audio.dataset.activeStation === station.id) {
-        setText(globalNow, "");
+        setText(globalNow, title || "");
       }
+    } catch (_) {
+      setText(target, "");
+      if (audio.dataset.activeStation === station.id) setText(globalNow, "");
     }
   }
 
@@ -157,18 +150,6 @@ const STATIONS = [
     STATIONS.forEach(pollStation);
   }
 
-  // ---------- Events ----------
-  audio.addEventListener("play", () =>
-    setPlayingTile(audio.dataset.activeStation || "")
-  );
-  audio.addEventListener("pause", () =>
-    setPlayingTile(audio.dataset.activeStation || "")
-  );
-  audio.addEventListener("ended", () =>
-    setPlayingTile(audio.dataset.activeStation || "")
-  );
-
-  // ---------- Start ----------
   render();
   pollAll();
   setInterval(pollAll, 5000);

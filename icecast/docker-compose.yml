@@ -23,7 +23,7 @@ services:
 
   liquidsoap_foo:
     image: savonet/liquidsoap:v2.3.0
-    container_name: icecast-liquidsoap
+    container_name: icecast-liquidsoap-foofighters
     restart: unless-stopped
     depends_on:
       - icecast
