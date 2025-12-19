@@ -24,7 +24,7 @@ services:
       - cache:/cache
       -  ./icecast.xml:/etc/icecast.xml:ro
       - "/etc/localtime:/etc/localtime:ro"
-      - "/home/agottschlich/media:/media:ro"
+      - "${PWD}/media:/media:ro"
 
 volumes:
   config:
