@@ -1,0 +1,38 @@
+services:
+  icecast:
+    image: moul/icecast:latest
+    platform: linux/amd64
+    container_name: icecast
+    restart: unless-stopped
+
+    ports:
+      - "8000:8000"
+
+    volumes:
+      - logs:/var/log/icecast2
+      - /etc/localtime:/etc/localtime:ro
+
+    environment:
+      ICECAST_SOURCE_PASSWORD: changeme
+      ICECAST_ADMIN_PASSWORD: changeme
+      ICECAST_PASSWORD: changeme
+      ICECAST_RELAY_PASSWORD: changeme
+
+  radio-source:
+    image: ghcr.io/linuxserver/ffmpeg:latest
+    container_name: icecast-radio-source
+    restart: unless-stopped
+    depends_on:
+      - icecast
+
+    volumes:
+#      - /Users/awiechert/ownCloud/Italienisch_Lernen:/music:ro
+      - "/Users/awiechert/Downloads/Foo Fighters - Discography:/music:ro"
+      - /Users/awiechert/Downloads/icecast/stream.sh:/stream.sh:ro
+
+    entrypoint: /bin/bash
+    command: /stream.sh
+
+volumes:
+  logs:
+
