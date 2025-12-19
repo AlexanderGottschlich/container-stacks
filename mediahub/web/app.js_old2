@@ -1,0 +1,19 @@
+(function(){
+  const clockEl = document.getElementById("clock");
+  const dateEl = document.getElementById("date");
+  function tick() {
+    const d = new Date();
+    clockEl.textContent = d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
+    dateEl.textContent = d.toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit",year:"numeric"});
+  }
+  tick();
+  setInterval(tick, 1000);
+  document.querySelectorAll(".tile").forEach(tile=>{
+    tile.addEventListener("click",()=>{
+      if(tile.dataset.url) location.href = tile.dataset.url;
+    });
+  });
+})();
+document.getElementById("exitBtn")?.addEventListener("click", () => {
+  location.href = "http://127.0.0.1:9333/exit";
+});

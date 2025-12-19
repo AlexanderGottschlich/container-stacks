@@ -1,0 +1,128 @@
+/* radio.css */
+
+/* ===== Player Card (optisch passend zur UI) ===== */
+
+.radio-top{
+  margin: 0 0 18px 0;
+}
+
+.radio-card{
+  width: 100%;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 18px;
+  box-shadow: 0 12px 30px rgba(0,0,0,.25);
+  padding: 16px;
+}
+
+.radio-card-title{
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: .2px;
+  margin-bottom: 6px;
+}
+
+.radio-card-now{
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin-bottom: 12px;
+  min-width: 0;
+}
+
+.radio-card-now-label{
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.radio-card-now-value{
+  font-size: 14px;
+  color: var(--text);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.radio-audio{
+  width: 100%;
+}
+
+/* ===== Grid ===== */
+
+.radio-grid{
+  width: 100%;
+}
+
+/* ===== Tiles: außen wie Streaming (.tile), innen wie YouTube ===== */
+
+.radio-tile{
+  padding: 16px;            /* sichtbarer Außenrahmen */
+  align-items: stretch;     /* überschreibt .tile center */
+  justify-content: stretch; /* überschreibt .tile center */
+}
+
+.radio-inner{
+  width: 100%;
+  height: 100%;
+  border-radius: 14px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  border: 1px solid rgba(255,255,255,.14);
+}
+
+/* Label wie YouTube */
+.radio-name{
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: .2px;
+  text-align: center;
+}
+
+/* Optionaler Now-Playing-Text */
+.radio-now{
+  color: rgba(255,255,255,.85);
+  font-size: 13px;
+  text-align: center;
+
+  max-width: 95%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-height: 1.2em; /* Layout stabil, auch wenn leer */
+}
+
+/* Fokus */
+.radio-tile:focus-visible{
+  outline: 2px solid rgba(255,255,255,.35);
+  outline-offset: 3px;
+}
+
+/* Active-State */
+.radio-tile.is-playing .radio-inner{
+  border-color: rgba(255,255,255,.26);
+  box-shadow: 0 10px 22px rgba(0,0,0,.28);
+}
+
+/* ===== Farbklassen ===== */
+
+.radio-color-youtube{
+  background: rgba(255, 0, 0, .85);
+  border-color: rgba(255, 0, 0, .45);
+}
+
+.radio-color-blue{
+  background: rgba(0, 95, 255, .85);
+  border-color: rgba(0, 95, 255, .45);
+}
+
+.radio-color-gray{
+  background: rgba(255,255,255,.10);
+  border-color: rgba(255,255,255,.14);
+}

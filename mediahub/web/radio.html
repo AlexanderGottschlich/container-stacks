@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Radio</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="radio.css" />
+</head>
+
+<body>
+
+  <!-- Meta-Leiste oben -->
+  <header class="meta-bar">
+    <div class="meta-left">
+      <div class="title">Media Hub</div>
+
+      <a class="navlink" href="index.html">Start</a>
+      <a class="navlink active" href="radio.html">Radio</a>
+      <a class="navlink" href="http://localhost:8096">Jellyfin</a>
+    </div>
+
+    <div class="meta-right">
+      <span class="date" id="date">--</span>
+      <span class="clock" id="clock">--:--</span>
+      <button class="exit" id="exitBtn" type="button">Exit</button>
+    </div>
+  </header>
+
+  <!-- Inhalt -->
+  <main class="content">
+    <div class="grid-wrap">
+
+      <!-- Player Card -->
+<section class="radio-top">
+  <div class="radio-card">
+    <div class="radio-card-title">Player</div>
+    <div class="radio-card-now">
+      <span class="radio-card-now-label">Aktuell:</span>
+      <span id="globalNow" class="radio-card-now-value"></span>
+    </div>
+
+    <audio id="audio" class="radio-audio" controls preload="none"></audio>
+  </div>
+</section>
+
+      <!-- Tiles -->
+      <div class="grid radio-grid" id="radioGrid">
+        <!-- Kacheln werden per JS erzeugt -->
+      </div>
+
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+  <script src="radio.js"></script>
+</body>
+</html>

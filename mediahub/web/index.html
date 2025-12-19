@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TV Start</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+  <!-- Meta-Leiste oben -->
+  <header class="meta-bar">
+    <div class="meta-left">
+      <div class="title">Media Hub</div>
+
+      <!-- Ergänzung: Links in der Leiste -->
+      <a class="navlink" href="index.html">Start</a>
+      <a class="navlink" href="radio.html">Radio</a>
+      <a class="navlink" href="http://localhost:8096">Jellyfin</a>
+    </div>
+
+    <div class="meta-right">
+      <span class="date" id="date">--</span>
+      <span class="clock" id="clock">--:--</span>
+     <button class="exit" id="exitBtn" type="button">Exit</button>
+    </div>
+  </header>
+
+  <!-- Inhalt -->
+  <main class="content">
+    <div class="grid-wrap">
+      <div class="grid">
+        <div class="tile" data-url="https://www.youtube.com/tv"><img src="assets/logos/youtube.svg"></div>
+        <div class="tile" data-url="https://www.netflix.com"><img src="assets/logos/netflix.svg"></div>
+        <div class="tile" data-url="https://www.disneyplus.com"><img src="assets/logos/disneyplus.svg"></div>
+
+        <div class="tile" data-url="https://www.ardmediathek.de"><img src="assets/logos/ard.svg"></div>
+        <div class="tile" data-url="https://www.zdf.de"><img src="assets/logos/zdf.svg"></div>
+        <div class="tile" data-url="https://www.arte.tv/de/"><img src="assets/logos/arte.svg"></div>
+
+        <div class="tile" data-url="https://www.primevideo.com"><img src="assets/logos/primevideo.svg"></div>
+        <div class="tile" data-url="https://www.rakuten.tv"><img src="assets/logos/rakuten-tv.svg"></div>
+        <div class="tile" data-url="https://www.joyn.de"><img src="assets/logos/joyn.svg"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
