@@ -29,13 +29,28 @@ services:
       - icecast
 
     volumes:
-      - "${HOME_DIR}/Downloads/Foo Fighters - Discography:/music:ro"
-      - "./radio.liq:/etc/liquidsoap/radio.liq:ro"
+      - "/home/agottschlich/Downloads/Foo Fighters - Discography:/music:ro"
+      - "./radio-foofighters.liq:/etc/liquidsoap/radio-foofighters.liq:ro"
 
     environment:
       - TZ=Europe/Berlin
-    command: ["liquidsoap", "/etc/liquidsoap/radio.liq"]
+    command: ["liquidsoap", "/etc/liquidsoap/radio-foofighters.liq"]
 
+    networks:
+      - mediahub_net
+
+  liquidsoap_thievery:
+    image: savonet/liquidsoap:v2.3.0
+    container_name: icecast-liquidsoap-thievery
+    restart: unless-stopped
+    depends_on:
+      - icecast
+    volumes:
+      - "/home/agottschlich/Nextcloud/music/Thievery Corporation:/music:ro"
+      - "./radio-thievery.liq:/etc/liquidsoap/radio.liq:ro"
+    environment:
+      - TZ=Europe/Berlin
+    command: ["liquidsoap", "/etc/liquidsoap/radio.liq"]
     networks:
       - mediahub_net
 

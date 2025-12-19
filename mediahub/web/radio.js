@@ -1,16 +1,25 @@
 /* radio.js */
 (function () {
   // ========= Stationen =========
-  const STATIONS = [
-    {
-      id: "ff",
-      name: "Foo Fighters Radio",
-      stream: "/radio",
-      status: "/status-json.xsl",
-      mount: "/radio",
-      colorClass: "radio-color-youtube",
-    },
-  ];
+const STATIONS = [
+  {
+    id: "ff",
+    name: "Foo Fighters Radio",
+    stream: "/radio",
+    status: "/status-json.xsl",
+    mount: "/radio",
+    colorClass: "radio-color-youtube",
+  },
+  {
+    id: "th",
+    name: "Thievery Corporation Radio",
+    stream: "/thievery",
+    status: "/status-json.xsl",
+    mount: "/thievery",
+    colorClass: "radio-color-blue", // oder eine neue Klasse
+  },
+];
+
 
   const grid = document.getElementById("radioGrid");
   const audio = document.getElementById("audio");
