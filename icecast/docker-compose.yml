@@ -21,38 +21,22 @@ services:
     networks:
       - mediahub_net
 
-  liquidsoap_foo:
+  liquidsoap_radio:
     image: savonet/liquidsoap:v2.3.0
-    container_name: icecast-liquidsoap-foofighters
-    restart: unless-stopped
-    depends_on:
-      - icecast
-
-    volumes:
-      - "/home/agottschlich/Downloads/Foo Fighters - Discography:/music:ro"
-      - "./radio-foofighters.liq:/etc/liquidsoap/radio-foofighters.liq:ro"
-
-    environment:
-      - TZ=Europe/Berlin
-    command: ["liquidsoap", "/etc/liquidsoap/radio-foofighters.liq"]
-
-    networks:
-      - mediahub_net
-
-  liquidsoap_thievery:
-    image: savonet/liquidsoap:v2.3.0
-    container_name: icecast-liquidsoap-thievery
+    container_name: icecast-liquidsoap-radio
     restart: unless-stopped
     depends_on:
       - icecast
     volumes:
-      - "/home/agottschlich/Nextcloud/music/Thievery Corporation:/music:ro"
-      - "./radio-thievery.liq:/etc/liquidsoap/radio.liq:ro"
+      - "/home/agottschlich/Downloads/Foo Fighters - Discography:/music/foofighters:ro"
+      - "/home/agottschlich/Nextcloud/music/Thievery Corporation:/music/thievery:ro"
+      - "./radio-multi.liq:/etc/liquidsoap/radio.liq:ro"
     environment:
       - TZ=Europe/Berlin
     command: ["liquidsoap", "/etc/liquidsoap/radio.liq"]
     networks:
       - mediahub_net
+
 
 
 volumes:
