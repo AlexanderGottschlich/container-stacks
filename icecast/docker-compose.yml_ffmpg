@@ -36,3 +36,6 @@ services:
 volumes:
   logs:
 
+networks:
+  mediahub_net:
+    external: true

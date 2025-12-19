@@ -18,17 +18,6 @@ services:
       ICECAST_PASSWORD: changeme
       ICECAST_RELAY_PASSWORD: changeme
 
-#  radio-admin:
-#    build:
-#      context: ./admin
-#    container_name: radio_admin
-#    depends_on:
-#      - icecast
-#    volumes:
-#      - /var/run/docker.sock:/var/run/docker.sock
-#    ports:
-#      - "8080:8080"
-
   liquidsoap_foo:
     image: savonet/liquidsoap:v2.3.0
     container_name: icecast-liquidsoap
@@ -46,3 +35,7 @@ services:
 
 volumes:
   logs:
+
+networks:
+  mediahub_net:
+    external: true
