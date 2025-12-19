@@ -17,7 +17,7 @@ radio = fallback(
 
 # Stream zu Icecast mit Metadaten
 output.icecast(
-  %mp3(bitrate = 128),
+  %mp3(bitrate = 96),
   host        = "icecast",
   port        = 8000,
   password    = "changeme",
