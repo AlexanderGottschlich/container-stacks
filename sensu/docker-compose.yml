@@ -5,66 +5,29 @@ services:
     image: sensu/sensu:latest
     container_name: sensu-backend
     restart: unless-stopped
-
-    command: sensu-backend start
-
-    environment:
-      # Initialer Admin
-      SENSU_BACKEND_CLUSTER_ADMIN_USERNAME: ${SENSU_ADMIN_USER:-admin}
-      SENSU_BACKEND_CLUSTER_ADMIN_PASSWORD: ${SENSU_ADMIN_PASS:-change-me}
-
-      # Agent-to-backend comms (WebSocket)
-      SENSU_BACKEND_AGENT_PORT: "8081"
-
-      # API nur intern (keine Ports nach außen publishen!)
-      SENSU_BACKEND_API_PORT: "8080"
-
-      TZ: Europe/Berlin
-
+    networks:
+      - proxy_net
+      - sensu_net
     volumes:
       - sensu_state:/var/lib/sensu
-      -
-    ports:
-      - "127.0.0.1:8081:8081"
-      - "127.0.0.1:8080:8080"
-    networks:
-      - sensu_net
-
-  sensu-web:
-    image: sensu/web:latest
-    container_name: sensu-web
-    restart: unless-stopped
-
-    depends_on:
-      - sensu-backend
-
     environment:
-      SENSU_BACKEND_URL: http://sensu-backend:8080
       TZ: Europe/Berlin
-
-    networks:
-      - sensu_net
-      - proxy_net
-
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy_net"
 
+      # UI hinter Traefik
       - "traefik.http.routers.sensu.rule=Host(`sensu.elastic2ls.com`)"
       - "traefik.http.routers.sensu.entrypoints=websecure"
       - "traefik.http.routers.sensu.tls=true"
       - "traefik.http.routers.sensu.tls.certresolver=le"
-
       - "traefik.http.services.sensu.loadbalancer.server.port=3000"
 
-      - "traefik.http.middlewares.sensu-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
-      - "traefik.http.routers.sensu.middlewares=sensu-headers@docker"
-
 networks:
-  sensu_net:
-    driver: bridge
   proxy_net:
     external: true
+  sensu_net:
+    driver: bridge
 
 volumes:
   sensu_state:
