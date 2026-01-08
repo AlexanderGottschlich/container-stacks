@@ -1,0 +1,14 @@
+type: CheckConfig
+api_version: core/v2
+metadata:
+  name: check-pihole-dns
+spec:
+  command: >-
+    check-dns.rb -s 192.168.6.1 -d google.com -t 5
+  interval: 30
+  timeout: 10
+  publish: true
+  subscriptions:
+    - naboo
+  runtime_assets:
+    - sensu-plugins-dns
