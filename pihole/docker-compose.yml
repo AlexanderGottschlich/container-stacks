@@ -21,6 +21,8 @@ services:
     ports:
       - "53:53/tcp"
       - "53:53/udp"
+      - "192.168.6.1:53:53/udp"
+      - "192.168.6.1:53:53/tcp"
 
     volumes:
       - pihole_etc:/etc/pihole
@@ -44,6 +46,16 @@ services:
       # (Optional) Security Header / Proto
       - "traefik.http.middlewares.pihole-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
       - "traefik.http.routers.pihole.middlewares=pihole-headers@docker"
+
+  unbound:
+    image: mvance/unbound:1.20.0
+    container_name: unbound
+    restart: unless-stopped
+    networks:
+      - pihole_net
+    volumes:
+      - ./unbound/unbound.conf:/opt/unbound/etc/unbound/unbound.conf:ro
+
 
 networks:
   proxy_net:
