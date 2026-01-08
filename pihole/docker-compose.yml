@@ -11,9 +11,6 @@ services:
       # Web UI Passwort (in .env setzen)
       WEBPASSWORD: ${PIHOLE_WEBPASSWORD}
 
-      # Optional: Upstream DNS
-      PIHOLE_DNS_: "1.1.1.1;1.0.0.1"
-
       # Host-IP des Pi-hole (wichtig für korrekte Anzeige/Links)
       FTLCONF_LOCAL_IPV4: ${PIHOLE_HOST_IP}
 
@@ -25,6 +22,7 @@ services:
     volumes:
       - pihole_etc:/etc/pihole
       - pihole_dnsmasq:/etc/dnsmasq.d
+      - ./dnsmasq/02-unbound.conf:/etc/dnsmasq.d/02-unbound.conf:ro
 
     networks:
       - proxy_net
@@ -46,14 +44,16 @@ services:
       - "traefik.http.routers.pihole.middlewares=pihole-headers@docker"
 
   unbound:
-    image: mvance/unbound:1.20.0
+    image: klutchell/unbound:latest
     container_name: unbound
     restart: unless-stopped
     networks:
-      - proxy_net
+      proxy_net:
+        aliases:
+          - unbound
     volumes:
-      - ./unbound/unbound.conf:/opt/unbound/etc/unbound/unbound.conf:ro
-
+      - ./unbound/unbound.conf:/etc/unbound/unbound.conf
+    command: ["-d", "-c", "/etc/unbound/unbound.conf"]
 
 networks:
   proxy_net:
