@@ -50,7 +50,7 @@ services:
     container_name: unbound
     restart: unless-stopped
     networks:
-      - pihole_net
+      - proxy_net
     volumes:
       - ./unbound/unbound.conf:/opt/unbound/etc/unbound/unbound.conf:ro
 
