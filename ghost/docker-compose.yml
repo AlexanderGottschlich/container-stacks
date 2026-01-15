@@ -1,0 +1,86 @@
+version: "3.8"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: ghost-mysql
+    restart: unless-stopped
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --mysqlx=0
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - ghost_mysql:/var/lib/mysql
+    networks:
+      - ghost_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  ghost:
+    image: ghost:5-alpine
+    container_name: ghost
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      # Wichtig: Ghost URL muss exakt stimmen (https + Domain)
+      url: ${GHOST_URL}
+
+      # DB
+      database__client: mysql
+      database__connection__host: mysql
+      database__connection__user: ${MYSQL_USER}
+      database__connection__password: ${MYSQL_PASSWORD}
+      database__connection__database: ${MYSQL_DATABASE}
+
+      # Optional: SMTP (wenn du Newsletter/Transactional Mails nutzt)
+      # Wenn SMTP_HOST leer ist, lässt du den Block am besten komplett weg.
+      mail__transport: SMTP
+      mail__options__host: ${SMTP_HOST}
+      mail__options__port: ${SMTP_PORT}
+      mail__options__auth__user: ${SMTP_USER}
+      mail__options__auth__pass: ${SMTP_PASS}
+      mail__from: ${SMTP_FROM}
+
+      # Hinter Reverse Proxy: Ghost erkennt HTTPS korrekt über X-Forwarded-Proto
+      # (Traefik setzt das normalerweise sauber, aber das schadet nicht.)
+      server__host: 0.0.0.0
+      server__port: 2368
+
+    volumes:
+      - ghost_content:/var/lib/ghost/content
+    networks:
+      - ghost_net
+      - proxy_net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy_net"
+
+      - "traefik.http.routers.ghost.rule=Host(`${GHOST_DOMAIN}`)"
+      - "traefik.http.routers.ghost.entrypoints=websecure"
+      - "traefik.http.routers.ghost.tls=true"
+      - "traefik.http.routers.ghost.tls.certresolver=le"
+
+      - "traefik.http.services.ghost.loadbalancer.server.port=2368"
+
+      # Optional: Security/Proxy Header (in der Regel nicht nötig, aber ok)
+      - "traefik.http.middlewares.ghost-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.routers.ghost.middlewares=ghost-headers@docker"
+
+networks:
+  ghost_net:
+    driver: bridge
+  proxy_net:
+    external: true
+
+volumes:
+  ghost_mysql:
+  ghost_content:
