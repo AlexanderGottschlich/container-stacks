@@ -1,0 +1,13 @@
+use_default_settings: true
+
+        server:
+        secret_key: "replace-with-a-long-random-string"
+        limiter: true
+        image_proxy: true
+
+        ui:
+        static_use_hash: true
+
+        search:
+        default_lang: "de"
+        safe_search: 0

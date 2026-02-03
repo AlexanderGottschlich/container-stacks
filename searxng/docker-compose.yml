@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  searxng:
+    image: searxng/searxng:latest
+    container_name: searxng
+    restart: unless-stopped
+
+    environment:
+      TZ: Europe/Berlin
+      SEARXNG_BASE_URL: https://search.elastic2ls.com/
+      SEARXNG_SECRET_KEY: ${SEARXNG_SECRET_KEY}
+
+    volumes:
+      # Konfiguration (settings.yml etc.)
+      - ./searxng/config:/etc/searxng
+      # Persistente Daten (favicons, cache)
+      - ./searxng/data:/var/lib/searxng
+
+    networks:
+      - proxy_net
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy_net"
+
+      # Router
+      - "traefik.http.routers.searxng.rule=Host(`search.elastic2ls.com`)"
+      - "traefik.http.routers.searxng.entrypoints=websecure"
+      - "traefik.http.routers.searxng.tls=true"
+      - "traefik.http.routers.searxng.tls.certresolver=le"
+
+      # Interner Service-Port
+      - "traefik.http.services.searxng.loadbalancer.server.port=8080"
+
+      # Security / Forwarded Proto
+      - "traefik.http.middlewares.searxng-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.routers.searxng.middlewares=searxng-headers@docker"
+
+networks:
+  proxy_net:
+    external: true
