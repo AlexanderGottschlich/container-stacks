@@ -8,7 +8,7 @@ services:
 
     environment:
       TZ: Europe/Berlin
-      SEARXNG_BASE_URL: https://search.elastic2ls.com/
+      SEARXNG_BASE_URL: https://sx.elastic2ls.com/
       SEARXNG_SECRET_KEY: ${SEARXNG_SECRET_KEY}
 
     volumes:
@@ -25,7 +25,7 @@ services:
       - "traefik.docker.network=proxy_net"
 
       # Router
-      - "traefik.http.routers.searxng.rule=Host(`search.elastic2ls.com`)"
+      - "traefik.http.routers.searxng.rule=Host(`sx.elastic2ls.com`)"
       - "traefik.http.routers.searxng.entrypoints=websecure"
       - "traefik.http.routers.searxng.tls=true"
       - "traefik.http.routers.searxng.tls.certresolver=le"
