@@ -37,5 +37,5 @@ services:
       - "traefik.http.middlewares.ytdl-headers.headers.permissionsPolicy=geolocation=(),camera=(),microphone=()"
 
 networks:
-  traefik:
+  proxy_net:
     external: true
