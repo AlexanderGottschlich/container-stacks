@@ -28,8 +28,8 @@ services:
     depends_on:
       - icecast
     volumes:
-      - "/home/agottschlich/Downloads/Foo Fighters - Discography:/music/foofighters:ro"
-      - "/home/agottschlich/Nextcloud/music/Thievery Corporation:/music/thievery:ro"
+      - "/Users/awiechert/Downloads/Foo Fighters - Discography:/music/foofighters:ro"
+#      - "/home/agottschlich/Nextcloud/music/Thievery Corporation:/music/thievery:ro"
       - "./radio.liq:/etc/liquidsoap/radio.liq:ro"
     environment:
       - TZ=Europe/Berlin
