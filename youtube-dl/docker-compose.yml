@@ -13,6 +13,17 @@ services:
 
     volumes:
       - ${YTDL_DOWNLOAD_DIR}:/youtube-dl
+      - ${YTDL_COOKIE_FILE}:/cookies.txt:ro
+
+    environment:
+      # wir setzen mehrere Varianten, weil Images hier unterschiedlich sind
+      - YTDLP_OPTIONS=--cookies /cookies.txt
+      - YOUTUBE_DL_OPTIONS=--cookies /cookies.txt
+      - EXTRA_ARGS=--cookies /cookies.txt
+
+      # optional: reduziert Bot-Trigger manchmal
+      - YTDLP_OPTIONS_2=--sleep-interval 1 --max-sleep-interval 5
+
     networks:
       - proxy_net
 
