@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+  yt-dl:
+    image: kmb32123/youtube-dl-server:latest
+    container_name: yt-dl
+    restart: unless-stopped
+
+    # optional: lokale Port-Weiterleitung nur für Debug/Tests
+    # im Traefik-Betrieb kannst du das weglassen
+    # ports:
+    #   - "9000:8080"
+
+    volumes:
+      - ${YTDL_DOWNLOAD_DIR:-/home/${USER}/Downloads/youtube-dl}:/youtube-dl
+
+    networks:
+      - traefik
+
+    labels:
+      - "traefik.enable=true"
+
+      # Router
+      - "traefik.http.routers.ytdl.rule=Host(`${YTDL_HOST}`)"
+      - "traefik.http.routers.ytdl.entrypoints=websecure"
+      - "traefik.http.routers.ytdl.tls=true"
+      - "traefik.http.routers.ytdl.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencrypt}"
+
+      # Service-Port im Container
+      - "traefik.http.services.ytdl.loadbalancer.server.port=8080"
+
+      # Optionale Baseline-Security-Header (Middleware)
+      - "traefik.http.routers.ytdl.middlewares=ytdl-headers@docker"
+      - "traefik.http.middlewares.ytdl-headers.headers.frameDeny=true"
+      - "traefik.http.middlewares.ytdl-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.ytdl-headers.headers.referrerPolicy=no-referrer"
+      - "traefik.http.middlewares.ytdl-headers.headers.permissionsPolicy=geolocation=(),camera=(),microphone=()"
+
+networks:
+  traefik:
+    external: true
