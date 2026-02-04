@@ -12,8 +12,7 @@ services:
     #   - "9000:8080"
 
     volumes:
-      - ${YTDL_DOWNLOAD_DIR:-/home/${USER}/Downloads/youtube-dl}:/youtube-dl
-
+      - ${YTDL_DOWNLOAD_DIR}:/youtube-dl
     networks:
       - proxy_net
 
