@@ -15,7 +15,7 @@ services:
       - ${YTDL_DOWNLOAD_DIR:-/home/${USER}/Downloads/youtube-dl}:/youtube-dl
 
     networks:
-      - traefik
+      - proxy_net
 
     labels:
       - "traefik.enable=true"
