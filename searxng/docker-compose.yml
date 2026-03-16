@@ -6,6 +6,13 @@ services:
     container_name: searxng
     restart: unless-stopped
 
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+        reservations:
+          cpus: "1.0"
+
     environment:
       TZ: Europe/Berlin
       SEARXNG_BASE_URL: https://sx.elastic2ls.com/
@@ -32,6 +39,7 @@ services:
 
       # Interner Service-Port
       - "traefik.http.services.searxng.loadbalancer.server.port=8080"
+      - "traefik.http.services.searxng.loadbalancer.passhostheader=true"
 
       # Security / Forwarded Proto
       - "traefik.http.middlewares.searxng-headers.headers.customrequestheaders.X-Forwarded-Proto=https"

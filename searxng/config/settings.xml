@@ -4,6 +4,8 @@ use_default_settings: true
         secret_key: "replace-with-a-long-random-string"
         limiter: true
         image_proxy: true
+	workers: 4
+	cpu: 2
 
         ui:
         static_use_hash: true
