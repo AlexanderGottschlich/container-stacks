@@ -47,6 +47,10 @@ services:
       - "traefik.http.routers.nextcloud.tls.certresolver=le"
       - "traefik.http.services.nextcloud.loadbalancer.server.port=80"
 
+      - "traefik.http.routers.nextcloud.middlewares=nextcloud-dav"
+      - "traefik.http.middlewares.nextcloud-dav.redirectregex.regex=^https://([^/]+)/\\.well-known/(card|cal)dav$"
+      - "traefik.http.middlewares.nextcloud-dav.redirectregex.replacement=https://$${1}/remote.php/dav/"
+      - "traefik.http.middlewares.nextcloud-dav.redirectregex.permanent=true"
   cron:
     image: nextcloud:32-apache
     restart: unless-stopped
