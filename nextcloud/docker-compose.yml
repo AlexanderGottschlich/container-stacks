@@ -48,7 +48,7 @@ services:
       - "traefik.http.services.nextcloud.loadbalancer.server.port=80"
 
       - "traefik.http.routers.nextcloud.middlewares=nextcloud-dav"
-      - "traefik.http.middlewares.nextcloud-dav.redirectregex.regex=^https://([^/]+)/\\.well-known/(card|cal)dav$"
+      - "traefik.http.middlewares.nextcloud-dav.redirectregex.regex=^https://([^/]+)/\\.well-known/(card|cal)dav$$"
       - "traefik.http.middlewares.nextcloud-dav.redirectregex.replacement=https://$${1}/remote.php/dav/"
       - "traefik.http.middlewares.nextcloud-dav.redirectregex.permanent=true"
   cron:
