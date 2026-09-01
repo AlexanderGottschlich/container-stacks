@@ -15,6 +15,7 @@ apt-get install -y --no-install-recommends \
     build-essential \
     ca-certificates \
     gettext \
+    iproute2 \
     iputils-ping \
     libapache2-mod-php \
     libgd-dev \

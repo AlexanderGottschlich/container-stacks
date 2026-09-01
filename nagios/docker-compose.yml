@@ -16,6 +16,9 @@ services:
     environment:
       TZ: Europe/Berlin
       NAGIOSADMIN_PASSWORD: ${NAGIOSADMIN_PASSWORD}
+      # Used by the route setup in the image. The matching external bridge is
+      # created idempotently by scripts/start-nagios.sh.
+      NAGIOS_EGRESS_GATEWAY: ${NAGIOS_EGRESS_GATEWAY:-172.30.250.1}
 
     volumes:
       - nagios_var:/usr/local/nagios/var
@@ -27,12 +30,15 @@ services:
       - /var/log/apache2
       - /var/lib/php/sessions
 
-    # Legacy docker-compose cannot express gw_priority.
-    # proxy_net remains the Traefik-facing network.
-    # scripts/start-nagios.sh attaches nagios_egress afterwards
-    # with gw-priority=1 so external checks leave via that bridge.
+    # Required only because this legacy Docker Engine has no gw-priority.
+    # The container sets its default route explicitly to nagios_egress.
+    cap_add:
+      - NET_ADMIN
+
+    # Start on egress only. scripts/start-nagios.sh attaches proxy_net
+    # afterwards and re-applies the egress default route.
     networks:
-      - proxy_net
+      - nagios_egress
 
     labels:
       - "traefik.enable=true"
@@ -51,7 +57,9 @@ services:
       - "traefik.http.routers.nagios.middlewares=nagios-root@docker"
 
 networks:
-  proxy_net:
+  # Lifecycle is intentionally managed by scripts/start-nagios.sh so the
+  # bridge has a stable subnet/gateway on legacy Docker.
+  nagios_egress:
     external: true
 
 volumes:

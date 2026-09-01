@@ -4,6 +4,9 @@ set -euo pipefail
 NAGIOS_CFG=/usr/local/nagios/etc/nagios.cfg
 HTPASSWD_FILE=/run/nagios/htpasswd.users
 
+# Legacy-Docker workaround: make the dedicated egress bridge the default route.
+/usr/local/bin/configure_egress_route.sh
+
 if [[ -z "${NAGIOSADMIN_PASSWORD:-}" ]]; then
     echo >&2 "ERROR: NAGIOSADMIN_PASSWORD is not set"
     exit 1

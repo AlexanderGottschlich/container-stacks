@@ -1,130 +1,79 @@
-# nagios-dockerized
+# Nagios Dockerized
 
-Nagios Core in Docker, designed for deployment behind an existing Traefik instance.
+Nagios Core is built as an immutable Docker image. Monitoring object files in
+`nagios/conf.d/*.cfg` are copied into the image during `docker build`; they are
+not mounted at runtime.
 
-## Design
+## Networking
 
-Monitoring configuration is immutable and version controlled:
+The host runs an older Docker Engine / docker-compose combination without
+`gw_priority`. Nagios therefore uses two networks through a reproducible deploy
+script:
 
-```text
-nagios/conf.d/*.cfg
-        |
-        | docker build / COPY
-        v
-/usr/local/nagios/etc/conf.d/*.cfg
-        |
-        v
-Nagios image
-```
+- `nagios_egress` – dedicated bridge and default route for external checks
+- `proxy_net` – existing external Traefik network for the Nagios web UI
 
-There is intentionally **no bind mount for Nagios object configuration** in
-`docker-compose.yml`. A configuration change therefore requires a new image
-build and container recreation.
+`scripts/start-nagios.sh` creates/verifies `nagios_egress`, starts Nagios on that
+network, attaches `proxy_net`, re-applies the egress default route and verifies
+that `152.53.46.232:443` is reachable from the container.
 
-Nagios runtime state is stored in the named `nagios_var` volume. The container
-root filesystem is read-only; `/run`, `/tmp` and Apache's log directory use
-tmpfs. Notifications are disabled by default until a real notification transport is configured.
+Because this legacy workaround must modify the container routing table, the
+container has `NET_ADMIN`. Once Docker Engine supports gateway priorities, this
+workaround and capability can be removed in favor of `gw_priority`.
 
-## Versions
-
-- Ubuntu 24.04
-- Nagios Core 4.5.14
-- Nagios Plugins 2.5
-
-## Initial test target
-
-`nagios/conf.d/nextcloud.cfg` monitors `nc2.elastic2ls.com` with:
-
-1. `https://nc2.elastic2ls.com/status.php`
-   - HTTPS/SNI
-   - certificate hostname verification
-   - HTTP 200
-   - response contains `"installed":true`
-   - WARNING after 5 seconds, CRITICAL after 10 seconds
-2. TLS certificate lifetime
-   - WARNING below 30 days
-   - CRITICAL below 14 days
-
-The host check itself uses the Nextcloud status endpoint, so the target is not
-incorrectly marked DOWN merely because ICMP is filtered.
-
-## Configuration
-
-Create the local environment file:
+## Initial setup
 
 ```bash
 cp .env.example .env
 ```
 
-Set at least:
+Set a strong `NAGIOSADMIN_PASSWORD` in `.env`.
 
-```dotenv
-NAGIOS_HOSTNAME=nagios.elastic2ls.com
-NAGIOSADMIN_PASSWORD=<long-random-password>
-```
+The existing Traefik deployment must already provide `proxy_net`.
 
-The external Docker network must already exist:
+## Build and deploy
 
-```bash
-docker network inspect proxy_net >/dev/null 2>&1 || docker network create proxy_net
-```
-
-## Build and start
+Do not call `docker-compose up` directly for normal deployment. Use:
 
 ```bash
-docker compose build --no-cache nagios
-docker compose up -d nagios
+./scripts/start-nagios.sh
 ```
 
-Nagios validates all `*.cfg` files during `docker build` and again before the
-container starts. An invalid repository configuration therefore fails before
-Nagios becomes active.
+The script is idempotent and can be used after every Git pull or configuration
+change.
 
-## Verify
+## Immutable monitoring configuration
+
+The image currently contains:
+
+- `nagios/conf.d/commands.cfg`
+- `nagios/conf.d/nextcloud.cfg`
+
+The Nextcloud check deliberately connects to public IP `152.53.46.232`, while
+using `nc2.elastic2ls.com` for HTTP Host, TLS SNI and certificate verification.
+It checks `/status.php` for HTTP 200 and `"installed":true`.
+
+After changing a `.cfg` file, run:
 
 ```bash
-docker compose ps
-docker compose logs -f nagios
+./scripts/start-nagios.sh
 ```
 
-Manual configuration validation:
+which rebuilds and redeploys the image.
+
+## Validate Nagios configuration
 
 ```bash
-docker compose exec nagios \
-  /usr/local/nagios/bin/nagios -v /usr/local/nagios/etc/nagios.cfg
+docker-compose exec nagios \
+  /usr/local/nagios/bin/nagios \
+  -v /usr/local/nagios/etc/nagios.cfg
 ```
 
-Manual Nextcloud application check:
+## Verify networks
 
 ```bash
-docker compose exec nagios \
-  /usr/local/nagios/libexec/check_http \
-  -H nc2.elastic2ls.com -S --sni --verify-host \
-  -u /status.php -e 200 -s '"installed":true' -w 5 -c 10 -t 15
+docker inspect nagios \
+  --format '{{range $name, $cfg := .NetworkSettings.Networks}}{{$name}} -> {{$cfg.IPAddress}}{{println}}{{end}}'
 ```
 
-Manual certificate check:
-
-```bash
-docker compose exec nagios \
-  /usr/local/nagios/libexec/check_http \
-  -H nc2.elastic2ls.com -S --sni --verify-host -C 30,14 -t 15
-```
-
-## Add another monitored service
-
-Add another `*.cfg` file below `nagios/conf.d/`, for example:
-
-```text
-nagios/conf.d/pihole.cfg
-```
-
-Then rebuild and redeploy:
-
-```bash
-docker compose build nagios
-docker compose up -d nagios
-```
-
-Because the configuration is copied into the image, the running container can
-never silently diverge from the Git revision used to build it.
+Both `nagios_egress` and `proxy_net` must be present.
