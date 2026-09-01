@@ -6,20 +6,30 @@ not mounted at runtime.
 
 ## Networking
 
-The host runs an older Docker Engine / docker-compose combination without
-`gw_priority`. Nagios therefore uses two networks through a reproducible deploy
-script:
+This host uses an older Docker Engine / `docker-compose` combination without
+`gw_priority`. Nagios therefore uses a reproducible legacy networking setup:
 
-- `nagios_egress` – dedicated bridge and default route for external checks
-- `proxy_net` – existing external Traefik network for the Nagios web UI
+- `nagios_egress` – dedicated bridge and default route for monitoring checks
+- `proxy_net` – existing Traefik network for the Nagios web UI
 
-`scripts/start-nagios.sh` creates/verifies `nagios_egress`, starts Nagios on that
-network, attaches `proxy_net`, re-applies the egress default route and verifies
-that `152.53.46.232:443` is reachable from the container.
+The target `nc2.elastic2ls.com` resolves to the host's own public address
+`152.53.46.232`. Docker's generated NAT rules deliberately return traffic that
+originates on a user-defined bridge before its published-port DNAT rule.
+Therefore `scripts/start-nagios.sh` installs narrowly scoped host rules so the
+Nagios connection to `152.53.46.232:443` is DNATed to Traefik and allowed across
+the two Docker bridges.
 
-Because this legacy workaround must modify the container routing table, the
-container has `NET_ADMIN`. Once Docker Engine supports gateway priorities, this
-workaround and capability can be removed in favor of `gw_priority`.
+The script dynamically discovers:
+
+- the bridge device for `nagios_egress`
+- the bridge device for `proxy_net`
+- Traefik's current IP on `proxy_net`
+
+No Docker network ID, bridge ID or Traefik container IP is hard-coded. Dedicated iptables chains are flushed and rebuilt on each deployment so a recreated Traefik container or Docker bridge cannot leave stale destination rules behind.
+
+> This verifies the service by connecting to the server's public IP from a
+> container on the same host. It does not replace a monitoring probe located
+> outside the server/provider network if true Internet-path monitoring is needed.
 
 ## Initial setup
 
@@ -29,51 +39,94 @@ cp .env.example .env
 
 Set a strong `NAGIOSADMIN_PASSWORD` in `.env`.
 
-The existing Traefik deployment must already provide `proxy_net`.
+The existing Traefik deployment must already provide `proxy_net`, and the
+Traefik container must be named `traefik` unless `TRAEFIK_CONTAINER` is set.
 
 ## Build and deploy
 
-Do not call `docker-compose up` directly for normal deployment. Use:
+Use the deployment script rather than calling `docker-compose up` directly:
 
 ```bash
 ./scripts/start-nagios.sh
 ```
 
-The script is idempotent and can be used after every Git pull or configuration
-change.
+The script is idempotent. It:
+
+1. creates/verifies `nagios_egress`
+2. builds and starts Nagios on that network
+3. attaches `proxy_net`
+4. restores the egress default route
+5. discovers both bridge interfaces and Traefik's current IP
+6. rebuilds dedicated `NAGIOS-PUBLIC-DNAT` and `NAGIOS-PUBLIC-FWD` chains from current Docker state
+7. tests `152.53.46.232:443`
+8. runs the Nextcloud application check
+
+Host firewall changes require root privileges; the script uses `sudo` when it
+is not itself run as root.
 
 ## Immutable monitoring configuration
 
-The image currently contains:
+The image contains:
 
 - `nagios/conf.d/commands.cfg`
 - `nagios/conf.d/nextcloud.cfg`
 
-The Nextcloud check deliberately connects to public IP `152.53.46.232`, while
-using `nc2.elastic2ls.com` for HTTP Host, TLS SNI and certificate verification.
-It checks `/status.php` for HTTP 200 and `"installed":true`.
+`nextcloud.cfg` deliberately sets:
 
-After changing a `.cfg` file, run:
+```text
+address 152.53.46.232
+```
+
+`nc2.elastic2ls.com` remains the HTTP Host header, TLS SNI value and certificate
+verification name. `/status.php` must return HTTP 200 and contain
+`"installed":true`.
+
+After changing any `.cfg` file:
 
 ```bash
 ./scripts/start-nagios.sh
 ```
 
-which rebuilds and redeploys the image.
+## Manual verification
 
-## Validate Nagios configuration
-
-```bash
-docker-compose exec nagios \
-  /usr/local/nagios/bin/nagios \
-  -v /usr/local/nagios/etc/nagios.cfg
-```
-
-## Verify networks
+Networks:
 
 ```bash
 docker inspect nagios \
   --format '{{range $name, $cfg := .NetworkSettings.Networks}}{{$name}} -> {{$cfg.IPAddress}}{{println}}{{end}}'
 ```
 
-Both `nagios_egress` and `proxy_net` must be present.
+Route:
+
+```bash
+docker-compose exec nagios ip route get 152.53.46.232
+```
+
+TCP:
+
+```bash
+docker-compose exec nagios \
+  bash -c 'timeout 5 bash -c "</dev/tcp/152.53.46.232/443" && echo OK || echo FAILED'
+```
+
+Application check:
+
+```bash
+docker-compose exec nagios \
+  /usr/local/nagios/libexec/check_http \
+  -4 -I 152.53.46.232 \
+  -H nc2.elastic2ls.com \
+  -S --sni --verify-host \
+  -u /status.php \
+  -e 200 \
+  -s '"installed":true' \
+  -w 5 -c 10 -t 15
+```
+
+Nagios configuration:
+
+```bash
+docker-compose exec nagios \
+  /usr/local/nagios/bin/nagios \
+  -v /usr/local/nagios/etc/nagios.cfg
+```
