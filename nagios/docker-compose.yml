@@ -17,13 +17,9 @@ services:
       TZ: Europe/Berlin
       NAGIOSADMIN_PASSWORD: ${NAGIOSADMIN_PASSWORD}
 
-    # Nagios object configuration is NOT mounted here. It is part of the image.
-    # Only runtime state survives container recreation.
     volumes:
       - nagios_var:/usr/local/nagios/var
 
-    # Keep the image filesystem read-only at runtime. Runtime files needed by
-    # Apache and the generated Basic-Auth file live on tmpfs.
     read_only: true
     tmpfs:
       - /run
@@ -31,18 +27,12 @@ services:
       - /var/log/apache2
       - /var/lib/php/sessions
 
-    # Two networks are intentional:
-    # - proxy_net: Traefik reaches the Nagios web UI here.
-    # - nagios_egress: default gateway for monitoring external/public targets.
-    #
-    # This prevents checks for the host's own public IP from originating on
-    # proxy_net, where Docker's published-port DNAT rule excludes traffic
-    # arriving from that same bridge.
+    # Legacy docker-compose cannot express gw_priority.
+    # proxy_net remains the Traefik-facing network.
+    # scripts/start-nagios.sh attaches nagios_egress afterwards
+    # with gw-priority=1 so external checks leave via that bridge.
     networks:
-      proxy_net:
-        gw_priority: 0
-      nagios_egress:
-        gw_priority: 1
+      - proxy_net
 
     labels:
       - "traefik.enable=true"
@@ -55,7 +45,6 @@ services:
 
       - "traefik.http.services.nagios.loadbalancer.server.port=80"
 
-      # Nagios' Apache UI lives below /nagios/.
       - "traefik.http.middlewares.nagios-root.redirectregex.regex=^https?://([^/]+)/?$$"
       - "traefik.http.middlewares.nagios-root.redirectregex.replacement=https://$${1}/nagios/"
       - "traefik.http.middlewares.nagios-root.redirectregex.permanent=true"
@@ -64,9 +53,6 @@ services:
 networks:
   proxy_net:
     external: true
-
-  nagios_egress:
-    driver: bridge
 
 volumes:
   nagios_var:
