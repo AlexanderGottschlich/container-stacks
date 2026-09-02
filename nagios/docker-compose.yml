@@ -35,10 +35,14 @@ services:
     cap_add:
       - NET_ADMIN
 
-    # Start on egress only. scripts/start-nagios.sh attaches proxy_net
-    # afterwards and re-applies the egress default route.
+    # Both networks are attached by Compose before the container starts.
+    # This is important for Traefik: it can resolve the backend on proxy_net
+    # immediately and never observes a transient egress-only container.
+    # Legacy Docker cannot express gateway priority, so the entrypoint
+    # explicitly restores nagios_egress as the default route.
     networks:
       - nagios_egress
+      - proxy_net
 
     labels:
       - "traefik.enable=true"
@@ -57,9 +61,13 @@ services:
       - "traefik.http.routers.nagios.middlewares=nagios-root@docker"
 
 networks:
-  # Lifecycle is intentionally managed by scripts/start-nagios.sh so the
-  # bridge has a stable subnet/gateway on legacy Docker.
+  # Lifecycle of nagios_egress is managed by scripts/start-nagios.sh so the
+  # bridge has stable IPAM on legacy Docker. Both networks are nevertheless
+  # attached by Compose before the Nagios container starts.
   nagios_egress:
+    external: true
+
+  proxy_net:
     external: true
 
 volumes:

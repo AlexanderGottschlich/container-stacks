@@ -120,12 +120,20 @@ else
   fi
 fi
 
-# Compose creates/recreates Nagios on egress first.
+# Compose creates/recreates Nagios with BOTH networks attached from the start.
+# This avoids a Traefik provider race where the container could be discovered
+# while it was still connected only to nagios_egress. Legacy Compose cannot
+# express gateway priority, so the container route is corrected afterwards.
 compose up -d --build "${CONTAINER}"
 
-# Attach proxy_net idempotently. Legacy Compose cannot express gateway priority.
 if ! network_attached "${PROXY_NETWORK}"; then
-  docker network connect "${PROXY_NETWORK}" "${CONTAINER}"
+  echo >&2 "ERROR: Compose did not attach '${PROXY_NETWORK}' to '${CONTAINER}'."
+  exit 1
+fi
+
+if ! network_attached "${EGRESS_NETWORK}"; then
+  echo >&2 "ERROR: Compose did not attach '${EGRESS_NETWORK}' to '${CONTAINER}'."
+  exit 1
 fi
 
 # Restore the dedicated egress bridge as default route.
@@ -221,6 +229,17 @@ docker inspect "${CONTAINER}" \
 
 echo "Default route:"
 docker exec "${CONTAINER}" ip route show default
+
+echo
+echo "Testing Apache Basic-Auth file permissions ..."
+if ! docker exec "${CONTAINER}" \
+  su -s /bin/sh www-data \
+  -c 'test -r /run/nagios/htpasswd.users'; then
+  echo >&2 "ERROR: Apache user www-data cannot read /run/nagios/htpasswd.users"
+  docker exec "${CONTAINER}" namei -l /run/nagios/htpasswd.users >&2 || true
+  exit 1
+fi
+echo "Apache auth file readable: OK"
 
 echo
 echo "Public-check path:"

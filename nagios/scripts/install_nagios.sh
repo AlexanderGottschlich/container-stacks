@@ -14,6 +14,7 @@ apt-get install -y --no-install-recommends \
     bc \
     build-essential \
     ca-certificates \
+    dnsutils \
     gettext \
     iproute2 \
     iputils-ping \
