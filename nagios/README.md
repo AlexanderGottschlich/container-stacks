@@ -214,3 +214,10 @@ curl -Ik https://nagios.elastic2ls.com/nagios/
 ```
 
 The container aborts during startup if the Apache runtime user `www-data` cannot read the password file. This prevents the previous Apache `AH01620` / HTTP 500 failure mode from reaching production.
+
+### DNS plugin build invariant
+
+The image build verifies that `check_dns` and `check_dig` exist and are executable
+under `/usr/local/nagios/libexec`. `dnsutils` supplies the required `nslookup`
+and `dig` binaries before the Nagios Plugins configure/build step. The build
+fails instead of producing an image with broken DNS service checks.

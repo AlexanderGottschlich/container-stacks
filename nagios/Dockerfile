@@ -23,6 +23,10 @@ RUN chmod 0755 /usr/local/bin/entrypoint.sh /usr/local/bin/configure_egress_rout
     && chown -R root:nagios /usr/local/nagios/etc/conf.d \
     && find /usr/local/nagios/etc/conf.d -type d -exec chmod 0755 {} \; \
     && find /usr/local/nagios/etc/conf.d -type f -name '*.cfg' -exec chmod 0644 {} \; \
+    && test -x /usr/local/nagios/libexec/check_http \
+    && test -x /usr/local/nagios/libexec/check_dns \
+    && test -x /usr/local/nagios/libexec/check_dig \
+    && /usr/local/nagios/libexec/check_dns --version >/dev/null \
     && /usr/local/nagios/bin/nagios -v /usr/local/nagios/etc/nagios.cfg \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
