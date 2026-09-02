@@ -137,7 +137,7 @@ The immutable image now contains one object file per monitored public service:
 
 - `nextcloud.cfg` – Nextcloud `/status.php`, public DNS and TLS
 - `pihole.cfg` – Pi-hole public HTTPS route, public DNS, TLS, Pi-hole resolver and Unbound recursion
-- `youtube-dl.cfg` – `yt.elastic2ls.com`, page-content, public DNS and TLS
+- `youtube-dl.cfg` – `yt2.elastic2ls.com`, page-content, public DNS and TLS
 - `searxng.cfg` – `sx.elastic2ls.com`, page-content, public DNS and TLS
 - `sensu.cfg` – `sensu.elastic2ls.com`, HTTPS endpoint, public DNS and TLS
 
@@ -146,6 +146,8 @@ The hostname remains the HTTP Host header/TLS SNI name. A separate DNS service
 also verifies that the public A record still resolves to `152.53.46.232`.
 
 `check_dns` requires `nslookup`; `dnsutils` is therefore installed in the image.
+
+Unbound listens on port `5335` in the supplied Pi-hole stack. Its Nagios service uses the repository-managed command name `check_unbound_dns`, which wraps the official Nagios `check_dig` plugin against `unbound:5335`; no custom `check_unbound_dns` executable is required. The Pi-hole resolver check remains on DNS port 53.
 
 ### Deliberately not enabled yet
 
@@ -159,9 +161,8 @@ archive (`GHOST_DOMAIN=cloudkostenkompass.de` while `GHOST_URL` points to
 `blog.elastic2ls.com`). Resolve that canonical-domain choice before adding a
 strict Ghost application/content check.
 
-The supplied youtube-dl `.env` contains `YTDL_HOST=yt2.elastic2ls.com`, while
-this monitoring configuration follows the requested public endpoint
-`yt.elastic2ls.com`. Keep the deployment and monitoring hostname aligned.
+The youtube-dl stack and this monitoring configuration both use
+`yt2.elastic2ls.com`.
 
 ## External website monitoring
 
@@ -221,3 +222,23 @@ The image build verifies that `check_dns` and `check_dig` exist and are executab
 under `/usr/local/nagios/libexec`. `dnsutils` supplies the required `nslookup`
 and `dig` binaries before the Nagios Plugins configure/build step. The build
 fails instead of producing an image with broken DNS service checks.
+
+
+## Monitoring semantics
+
+Application/website checks and TLS checks are deliberately separated:
+
+- HTTP/Application checks verify reachability, routing, HTTP status/content and SNI.
+- `TLS certificate` checks verify hostname identity and certificate expiry.
+- A certificate hostname mismatch therefore makes only the TLS service CRITICAL; it does not hide application availability.
+- Unbound is checked with the official `check_dig` plugin against `unbound:5335`; no repository-specific DNS plugin is required.
+
+### yt2.elastic2ls.com TLS
+
+The supplied container stack defines the Traefik ACME resolver as `le`, while the youtube-dl stack currently sets `TRAEFIK_CERTRESOLVER=letsencrypt`. The youtube-dl stack should use:
+
+```env
+TRAEFIK_CERTRESOLVER=le
+```
+
+Then recreate the youtube-dl container so Traefik can obtain/use the certificate for `yt2.elastic2ls.com`. Nagios intentionally keeps the TLS check CRITICAL until the served certificate matches that hostname.

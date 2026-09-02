@@ -124,7 +124,7 @@ fi
 # This avoids a Traefik provider race where the container could be discovered
 # while it was still connected only to nagios_egress. Legacy Compose cannot
 # express gateway priority, so the container route is corrected afterwards.
-compose up -d --build "${CONTAINER}"
+compose up -d --build --force-recreate "${CONTAINER}"
 
 if ! network_attached "${PROXY_NETWORK}"; then
   echo >&2 "ERROR: Compose did not attach '${PROXY_NETWORK}' to '${CONTAINER}'."
@@ -135,6 +135,35 @@ if ! network_attached "${EGRESS_NETWORK}"; then
   echo >&2 "ERROR: Compose did not attach '${EGRESS_NETWORK}' to '${CONTAINER}'."
   exit 1
 fi
+
+# Immutable-config guard: the current image must use the official check_dig
+# binary for Unbound. A stale image/container previously referenced a custom
+# /usr/local/nagios/libexec/check_unbound_dns file and produced errno=2.
+echo
+echo "Verifying loaded Unbound check command ..."
+if docker exec "${CONTAINER}" \
+    grep -R -n '/usr/local/nagios/libexec/check_unbound_dns' \
+    /usr/local/nagios/etc/conf.d >/tmp/nagios-stale-unbound.$$ 2>/dev/null; then
+  echo >&2 "ERROR: stale Unbound plugin reference found in running container:"
+  cat /tmp/nagios-stale-unbound.$$ >&2
+  rm -f /tmp/nagios-stale-unbound.$$
+  exit 1
+fi
+rm -f /tmp/nagios-stale-unbound.$$
+
+if ! docker exec "${CONTAINER}" test -x /usr/local/nagios/libexec/check_dig; then
+  echo >&2 "ERROR: check_dig is missing in the running Nagios container."
+  exit 1
+fi
+
+if ! docker exec "${CONTAINER}" sh -c \
+    "grep -A2 'command_name[[:space:]]*check_unbound_dns' /usr/local/nagios/etc/conf.d/commands.cfg | grep -q 'check_dig'"; then
+  echo >&2 "ERROR: running command definition check_unbound_dns does not use check_dig."
+  docker exec "${CONTAINER}" sh -c \
+    "grep -A4 'command_name[[:space:]]*check_unbound_dns' /usr/local/nagios/etc/conf.d/commands.cfg" >&2 || true
+  exit 1
+fi
+echo "Unbound command definition: check_dig OK"
 
 # Restore the dedicated egress bridge as default route.
 docker exec \
