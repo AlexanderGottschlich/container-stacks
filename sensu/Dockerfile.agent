@@ -1,0 +1,14 @@
+ARG SENSU_VERSION=6.14.2
+FROM sensu/sensu:${SENSU_VERSION}
+
+USER root
+RUN apk add --no-cache \
+    bash \
+    bind-tools \
+    ca-certificates \
+    curl \
+    netcat-openbsd \
+    openssl
+
+COPY checks/ /opt/sensu/checks/
+RUN chmod 0755 /opt/sensu/checks/*.sh

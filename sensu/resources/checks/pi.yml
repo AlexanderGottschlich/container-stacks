@@ -1,0 +1,125 @@
+---
+type: CheckConfig
+api_version: core/v2
+metadata:
+  name: pi-tcp-443
+  labels:
+    managed_by: git
+    source: nagios-migration
+  annotations:
+    nagios_service_description: 'Nagios host check: TCP 443'
+    target: pi.elastic2ls.com
+spec:
+  command: /opt/sensu/checks/check_tcp.sh --host pi.elastic2ls.com --ip 152.53.46.232
+    --port 443
+  interval: 300
+  timeout: 20
+  publish: true
+  round_robin: true
+  proxy_entity_name: pi.elastic2ls.com
+  subscriptions:
+  - monitoring
+---
+type: CheckConfig
+api_version: core/v2
+metadata:
+  name: pi-https-endpoint
+  labels:
+    managed_by: git
+    source: nagios-migration
+  annotations:
+    nagios_service_description: Pi-hole HTTPS endpoint
+    target: pi.elastic2ls.com
+spec:
+  command: /opt/sensu/checks/check_http.sh --host pi.elastic2ls.com --ip 152.53.46.232
+    --path /admin/ --status 200,301,302,401,403
+  interval: 300
+  timeout: 20
+  publish: true
+  round_robin: true
+  proxy_entity_name: pi.elastic2ls.com
+  subscriptions:
+  - monitoring
+---
+type: CheckConfig
+api_version: core/v2
+metadata:
+  name: pi-public-dns-a
+  labels:
+    managed_by: git
+    source: nagios-migration
+  annotations:
+    nagios_service_description: Public DNS A record
+    target: pi.elastic2ls.com
+spec:
+  command: /opt/sensu/checks/check_dns.sh --host pi.elastic2ls.com --expected-ip 152.53.46.232
+  interval: 300
+  timeout: 20
+  publish: true
+  round_robin: true
+  proxy_entity_name: pi.elastic2ls.com
+  subscriptions:
+  - monitoring
+---
+type: CheckConfig
+api_version: core/v2
+metadata:
+  name: pi-tls-certificate
+  labels:
+    managed_by: git
+    source: nagios-migration
+  annotations:
+    nagios_service_description: TLS certificate
+    target: pi.elastic2ls.com
+spec:
+  command: /opt/sensu/checks/check_tls.sh --host pi.elastic2ls.com --ip 152.53.46.232
+    --warning 30 --critical 14
+  interval: 3600
+  timeout: 20
+  publish: true
+  round_robin: true
+  proxy_entity_name: pi.elastic2ls.com
+  subscriptions:
+  - monitoring
+---
+type: CheckConfig
+api_version: core/v2
+metadata:
+  name: pi-dns-resolver
+  labels:
+    managed_by: git
+    source: nagios-migration
+  annotations:
+    nagios_service_description: Pi-hole DNS resolver
+    target: pi.elastic2ls.com
+spec:
+  command: /opt/sensu/checks/check_dns.sh --host example.com --server pihole --port
+    53
+  interval: 300
+  timeout: 20
+  publish: true
+  round_robin: true
+  proxy_entity_name: pi.elastic2ls.com
+  subscriptions:
+  - monitoring
+---
+type: CheckConfig
+api_version: core/v2
+metadata:
+  name: pi-unbound-recursive-dns
+  labels:
+    managed_by: git
+    source: nagios-migration
+  annotations:
+    nagios_service_description: Unbound recursive DNS
+    target: pi.elastic2ls.com
+spec:
+  command: /opt/sensu/checks/check_dns.sh --host example.com --server unbound --port
+    5335
+  interval: 300
+  timeout: 20
+  publish: true
+  round_robin: true
+  proxy_entity_name: pi.elastic2ls.com
+  subscriptions:
+  - monitoring

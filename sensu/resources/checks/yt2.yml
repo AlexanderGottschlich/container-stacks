@@ -1,0 +1,84 @@
+---
+type: CheckConfig
+api_version: core/v2
+metadata:
+  name: yt2-tcp-443
+  labels:
+    managed_by: git
+    source: nagios-migration
+  annotations:
+    nagios_service_description: 'Nagios host check: TCP 443'
+    target: yt2.elastic2ls.com
+spec:
+  command: /opt/sensu/checks/check_tcp.sh --host yt2.elastic2ls.com --ip 152.53.46.232
+    --port 443
+  interval: 300
+  timeout: 20
+  publish: true
+  round_robin: true
+  proxy_entity_name: yt2.elastic2ls.com
+  subscriptions:
+  - monitoring
+---
+type: CheckConfig
+api_version: core/v2
+metadata:
+  name: yt2-youtube-dl-web-frontend
+  labels:
+    managed_by: git
+    source: nagios-migration
+  annotations:
+    nagios_service_description: youtube-dl web frontend
+    target: yt2.elastic2ls.com
+spec:
+  command: /opt/sensu/checks/check_http.sh --host yt2.elastic2ls.com --ip 152.53.46.232
+    --path / --status 200 --content youtube-dl --follow
+  interval: 300
+  timeout: 20
+  publish: true
+  round_robin: true
+  proxy_entity_name: yt2.elastic2ls.com
+  subscriptions:
+  - monitoring
+---
+type: CheckConfig
+api_version: core/v2
+metadata:
+  name: yt2-public-dns-a
+  labels:
+    managed_by: git
+    source: nagios-migration
+  annotations:
+    nagios_service_description: Public DNS A record
+    target: yt2.elastic2ls.com
+spec:
+  command: /opt/sensu/checks/check_dns.sh --host yt2.elastic2ls.com --expected-ip
+    152.53.46.232
+  interval: 300
+  timeout: 20
+  publish: true
+  round_robin: true
+  proxy_entity_name: yt2.elastic2ls.com
+  subscriptions:
+  - monitoring
+---
+type: CheckConfig
+api_version: core/v2
+metadata:
+  name: yt2-tls-certificate
+  labels:
+    managed_by: git
+    source: nagios-migration
+  annotations:
+    nagios_service_description: TLS certificate
+    target: yt2.elastic2ls.com
+spec:
+  command: /opt/sensu/checks/check_tls.sh --host yt2.elastic2ls.com --ip 152.53.46.232
+    --warning 30 --critical 14
+  interval: 3600
+  timeout: 20
+  publish: true
+  round_robin: true
+  proxy_entity_name: yt2.elastic2ls.com
+  subscriptions:
+  - monitoring

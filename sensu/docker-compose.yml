@@ -2,56 +2,94 @@ version: "3.8"
 
 services:
   sensu-backend:
-    image: sensu/sensu:latest
+    image: sensu/sensu:${SENSU_VERSION:-6.14.2}
     container_name: sensu-backend
     restart: unless-stopped
     networks:
-      - proxy_net
-      - sensu_net
+      proxy_net:
+        gw_priority: 0
+      sensu_net:
+        gw_priority: 0
     volumes:
       - sensu_state:/var/lib/sensu
     environment:
       TZ: Europe/Berlin
+      # For a new backend these bootstrap the first admin account.
+      # On an existing initialized volume they do not change the password.
+      SENSU_BACKEND_CLUSTER_ADMIN_USERNAME: ${SENSU_ADMIN_USER}
+      SENSU_BACKEND_CLUSTER_ADMIN_PASSWORD: ${SENSU_ADMIN_PASS}
     command: >
-      sh -c "
       sensu-backend start
-      "
+      --state-dir /var/lib/sensu/sensu-backend
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy_net"
-      - "traefik.http.routers.sensu.rule=Host(`sensu.elastic2ls.com`)"
+      - "traefik.http.routers.sensu.rule=Host(`${SENSU_HOSTNAME:-sensu.elastic2ls.com}`)"
       - "traefik.http.routers.sensu.entrypoints=websecure"
       - "traefik.http.routers.sensu.tls=true"
       - "traefik.http.routers.sensu.tls.certresolver=le"
       - "traefik.http.services.sensu.loadbalancer.server.port=3000"
 
-  sensu-init:
-    image: sensu/sensu:latest
-    container_name: sensu-init
+  sensu-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+      args:
+        SENSU_VERSION: ${SENSU_VERSION:-6.14.2}
+    image: elastic2ls/sensu-agent:${SENSU_VERSION:-6.14.2}
+    container_name: sensu-agent
+    restart: unless-stopped
     depends_on:
       - sensu-backend
+    environment:
+      TZ: Europe/Berlin
+    command: >
+      sensu-agent start
+      --name monitoring-proxy
+      --backend-url ws://sensu-backend:8081
+      --subscriptions monitoring
+      --cache-dir /var/lib/sensu
+    volumes:
+      - sensu_agent_state:/var/lib/sensu
+    networks:
+      # Required to resolve/reach the pihole and unbound containers directly.
+      proxy_net:
+        gw_priority: 0
+      # Direct connection to the Sensu backend.
+      sensu_net:
+        gw_priority: 0
+      # Default route for public checks. This mirrors the Nagios egress fix and
+      # avoids reaching the host's own public services via proxy_net.
+      sensu_egress:
+        gw_priority: 1
+
+  # One-shot Configuration-as-Code loader. Run with:
+  #   docker compose run --rm sensu-config
+  sensu-config:
+    image: sensu/sensu:${SENSU_VERSION:-6.14.2}
+    container_name: sensu-config
+    depends_on:
+      - sensu-backend
+    restart: "no"
     networks:
       - sensu_net
     volumes:
-      - sensu_state:/var/lib/sensu
+      - ./resources:/resources:ro
+      - ./scripts/apply-config.sh:/usr/local/bin/apply-config.sh:ro
     environment:
+      SENSU_API_URL: http://sensu-backend:8080
       SENSU_ADMIN_USER: ${SENSU_ADMIN_USER}
       SENSU_ADMIN_PASS: ${SENSU_ADMIN_PASS}
-    entrypoint: >
-      sh -c "
-      echo 'waiting for backend…';
-      sleep 5;
-      sensu-backend init
-        --cluster-admin-username \"$SENSU_ADMIN_USER\"
-        --cluster-admin-password \"$SENSU_ADMIN_PASS\"
-        --ignore-already-initialized
-      "
+    entrypoint: ["/bin/sh", "/usr/local/bin/apply-config.sh"]
 
 networks:
   proxy_net:
     external: true
   sensu_net:
     driver: bridge
+  sensu_egress:
+    driver: bridge
 
 volumes:
   sensu_state:
+  sensu_agent_state:

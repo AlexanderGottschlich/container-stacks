@@ -1,0 +1,62 @@
+---
+type: CheckConfig
+api_version: core/v2
+metadata:
+  name: fachadmin-website-availability
+  labels:
+    managed_by: git
+    source: nagios-migration
+  annotations:
+    nagios_service_description: Website availability
+    target: www.fachadmin.de
+spec:
+  command: /opt/sensu/checks/check_http.sh --host www.fachadmin.de --path / --status
+    200 --follow
+  interval: 300
+  timeout: 20
+  publish: true
+  round_robin: true
+  proxy_entity_name: www.fachadmin.de
+  subscriptions:
+  - monitoring
+---
+type: CheckConfig
+api_version: core/v2
+metadata:
+  name: fachadmin-public-dns
+  labels:
+    managed_by: git
+    source: nagios-migration
+  annotations:
+    nagios_service_description: Public DNS
+    target: www.fachadmin.de
+spec:
+  command: /opt/sensu/checks/check_dns.sh --host www.fachadmin.de
+  interval: 1800
+  timeout: 20
+  publish: true
+  round_robin: true
+  proxy_entity_name: www.fachadmin.de
+  subscriptions:
+  - monitoring
+---
+type: CheckConfig
+api_version: core/v2
+metadata:
+  name: fachadmin-tls-certificate
+  labels:
+    managed_by: git
+    source: nagios-migration
+  annotations:
+    nagios_service_description: TLS certificate
+    target: www.fachadmin.de
+spec:
+  command: /opt/sensu/checks/check_tls.sh --host www.fachadmin.de --warning 30 --critical
+    14
+  interval: 43200
+  timeout: 20
+  publish: true
+  round_robin: true
+  proxy_entity_name: www.fachadmin.de
+  subscriptions:
+  - monitoring

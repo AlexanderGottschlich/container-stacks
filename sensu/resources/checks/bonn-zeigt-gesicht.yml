@@ -1,0 +1,62 @@
+---
+type: CheckConfig
+api_version: core/v2
+metadata:
+  name: bonn-zeigt-gesicht-website-availability
+  labels:
+    managed_by: git
+    source: nagios-migration
+  annotations:
+    nagios_service_description: Website availability
+    target: www.bonn-zeigt-gesicht.de
+spec:
+  command: /opt/sensu/checks/check_http.sh --host www.bonn-zeigt-gesicht.de --path
+    / --status 200 --follow
+  interval: 300
+  timeout: 20
+  publish: true
+  round_robin: true
+  proxy_entity_name: www.bonn-zeigt-gesicht.de
+  subscriptions:
+  - monitoring
+---
+type: CheckConfig
+api_version: core/v2
+metadata:
+  name: bonn-zeigt-gesicht-public-dns
+  labels:
+    managed_by: git
+    source: nagios-migration
+  annotations:
+    nagios_service_description: Public DNS
+    target: www.bonn-zeigt-gesicht.de
+spec:
+  command: /opt/sensu/checks/check_dns.sh --host www.bonn-zeigt-gesicht.de
+  interval: 1800
+  timeout: 20
+  publish: true
+  round_robin: true
+  proxy_entity_name: www.bonn-zeigt-gesicht.de
+  subscriptions:
+  - monitoring
+---
+type: CheckConfig
+api_version: core/v2
+metadata:
+  name: bonn-zeigt-gesicht-tls-certificate
+  labels:
+    managed_by: git
+    source: nagios-migration
+  annotations:
+    nagios_service_description: TLS certificate
+    target: www.bonn-zeigt-gesicht.de
+spec:
+  command: /opt/sensu/checks/check_tls.sh --host www.bonn-zeigt-gesicht.de --warning
+    30 --critical 14
+  interval: 43200
+  timeout: 20
+  publish: true
+  round_robin: true
+  proxy_entity_name: www.bonn-zeigt-gesicht.de
+  subscriptions:
+  - monitoring
