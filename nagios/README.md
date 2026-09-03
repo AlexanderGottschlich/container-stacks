@@ -242,3 +242,34 @@ TRAEFIK_CERTRESOLVER=le
 ```
 
 Then recreate the youtube-dl container so Traefik can obtain/use the certificate for `yt2.elastic2ls.com`. Nagios intentionally keeps the TLS check CRITICAL until the served certificate matches that hostname.
+
+## Light UI skin
+
+This repository includes a visual-only light skin for the stock Nagios Core web UI.
+The monitoring engine, CGI behavior, object configuration and authentication model
+are unchanged.
+
+The files are repository-managed and baked into the image:
+
+```text
+nagios/web/upzilla.css
+nagios/web/upzilla.js
+```
+
+During the Docker build, the CSS overlay is appended to Nagios Core's
+`share/stylesheets/common.css` and the small presentation helper is appended to
+`share/js/nag_funcs.js`. This keeps the stock Nagios files installed by the pinned
+Nagios release and adds only the repository-owned visual layer.
+
+The skin provides:
+
+- light navigation/sidebar
+- system UI typography
+- reduced borders and modern table spacing
+- compact OK/WARNING/CRITICAL/UNKNOWN/PENDING badges
+- subdued plugin output text
+- modern form controls
+- a small application header on CGI pages
+
+After deploying a newly built image, hard-refresh the browser because the Nagios
+stylesheets may be cached.

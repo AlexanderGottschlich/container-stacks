@@ -1,0 +1,506 @@
+/*
+ * elastic2ls Nagios Core light skin
+ * Visual-only overlay inspired by modern uptime dashboards.
+ * Nagios functionality and CGI output remain untouched.
+ */
+
+:root {
+  --ui-bg: #f6f7f9;
+  --ui-panel: #ffffff;
+  --ui-sidebar: #ffffff;
+  --ui-border: #e5e7eb;
+  --ui-border-strong: #d1d5db;
+  --ui-text: #20252d;
+  --ui-muted: #6b7280;
+  --ui-link: #253f78;
+  --ui-link-hover: #172554;
+  --ui-ok-bg: #e9f8ef;
+  --ui-ok: #168344;
+  --ui-warning-bg: #fff6dc;
+  --ui-warning: #a86600;
+  --ui-critical-bg: #fdeaea;
+  --ui-critical: #c42d32;
+  --ui-unknown-bg: #eef0f3;
+  --ui-unknown: #626a75;
+  --ui-pending-bg: #eef3ff;
+  --ui-pending: #48639c;
+  --ui-radius: 8px;
+  --ui-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+
+html,
+html.dark,
+html.light,
+body {
+  background: var(--ui-bg) !important;
+  color: var(--ui-text) !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  font-size: 14px !important;
+}
+
+body {
+  margin: 0;
+}
+
+/* Links */
+a,
+a:link,
+a:visited {
+  color: var(--ui-link) !important;
+  text-decoration: none !important;
+}
+
+a:hover,
+a:focus {
+  color: var(--ui-link-hover) !important;
+  text-decoration: none !important;
+}
+
+/* -------------------------------------------------------------------------
+ * Navigation frame
+ * ---------------------------------------------------------------------- */
+body.navbar {
+  background: var(--ui-sidebar) !important;
+  color: var(--ui-text) !important;
+  padding: 18px 14px 28px !important;
+  border-right: 1px solid var(--ui-border) !important;
+  box-sizing: border-box;
+  min-height: 100vh;
+}
+
+.navbarlogo {
+  margin: 0 0 24px !important;
+  padding: 4px 8px 18px !important;
+  border-bottom: 1px solid var(--ui-border) !important;
+  text-align: left !important;
+}
+
+.navbarlogo img {
+  max-width: 142px;
+  height: auto !important;
+  filter: invert(1) brightness(.28) contrast(1.25);
+  opacity: .92;
+}
+
+.navsection {
+  margin: 0 0 18px !important;
+  padding: 0 !important;
+}
+
+.navsectiontitle {
+  margin: 0 0 6px !important;
+  padding: 0 10px 7px !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: #8a919c !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: .055em !important;
+  line-height: 1.3 !important;
+  text-transform: uppercase;
+}
+
+.navsectionlinks,
+ul.navsectionlinks {
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+  background: transparent !important;
+}
+
+ul.navsectionlinks li,
+.navsectionlinks li {
+  margin: 2px 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+}
+
+ul.navsectionlinks li a,
+.navsectionlinks li a {
+  display: block !important;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 34px;
+  padding: 8px 10px !important;
+  border-radius: 7px;
+  color: #343a43 !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  line-height: 18px !important;
+  transition: background-color .12s ease, color .12s ease;
+}
+
+ul.navsectionlinks li a:hover,
+.navsectionlinks li a:hover {
+  background: #f0f2f5 !important;
+  color: #111827 !important;
+}
+
+/* -------------------------------------------------------------------------
+ * Small application header inserted by upzilla.js
+ * ---------------------------------------------------------------------- */
+.elastic2ls-topbar {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 58px;
+  margin: 0 0 22px;
+  padding: 0 24px;
+  background: var(--ui-panel);
+  border-bottom: 1px solid var(--ui-border);
+  color: var(--ui-text);
+  box-sizing: border-box;
+}
+
+.elastic2ls-topbar__left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.elastic2ls-topbar__mark {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  color: #232a33;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.elastic2ls-topbar__title {
+  color: #1f252d;
+  font-size: 16px;
+  font-weight: 650;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.elastic2ls-topbar__meta {
+  color: var(--ui-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* Give legacy CGI content room without changing its structure. */
+body.elastic2ls-modern-ui > table,
+body.elastic2ls-modern-ui > form,
+body.elastic2ls-modern-ui > div:not(.elastic2ls-topbar),
+body.elastic2ls-modern-ui > center {
+  margin-left: 24px;
+  margin-right: 24px;
+}
+
+/* -------------------------------------------------------------------------
+ * Typography and page titles
+ * ---------------------------------------------------------------------- */
+.statusTitle,
+.dataTitle,
+.infoBoxTitle,
+.reportTitle,
+.reportSelectTitle,
+.logEntriesTitle,
+.commandTitle,
+.navBoxTitle,
+DIV.statusTitle,
+DIV.dataTitle {
+  color: #1f252d !important;
+  font-family: inherit !important;
+  font-size: 20px !important;
+  font-weight: 650 !important;
+  line-height: 1.3 !important;
+  letter-spacing: -.01em;
+}
+
+.infoBox,
+.infoBoxBadProcStatus,
+.infoBoxTitle,
+.linkBox,
+td.linkBox,
+.optBox,
+.navBox {
+  background: var(--ui-panel) !important;
+  color: var(--ui-text) !important;
+  border-color: var(--ui-border) !important;
+  border-radius: var(--ui-radius) !important;
+  box-shadow: var(--ui-shadow);
+}
+
+/* -------------------------------------------------------------------------
+ * Tables
+ * ---------------------------------------------------------------------- */
+table {
+  font-family: inherit !important;
+  color: var(--ui-text) !important;
+}
+
+table.status,
+table.statusTable,
+table.data,
+table.hostStatus,
+table.serviceStatus,
+table.hostTotals,
+table.serviceTotals {
+  width: 100% !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  background: var(--ui-panel) !important;
+  border: 1px solid var(--ui-border) !important;
+  border-radius: var(--ui-radius) !important;
+  overflow: hidden;
+  box-shadow: var(--ui-shadow);
+}
+
+th,
+.statusHeader,
+th.status,
+th.data,
+th.hostStatus,
+th.serviceStatus {
+  background: #fafbfc !important;
+  color: #424852 !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--ui-border) !important;
+  padding: 10px 12px !important;
+  font-family: inherit !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: .025em;
+  line-height: 1.3 !important;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+td,
+td.status,
+td.data,
+td.hostStatus,
+td.serviceStatus,
+.statusOdd,
+.statusEven,
+.statusBGODD,
+.statusBGEVEN {
+  font-family: inherit !important;
+}
+
+table.status td,
+table.statusTable td,
+table.data td,
+table.hostStatus td,
+table.serviceStatus td {
+  padding: 10px 12px !important;
+  border: 0 !important;
+  border-bottom: 1px solid #edf0f2 !important;
+  background: #fff !important;
+  color: #303640 !important;
+  vertical-align: middle !important;
+  line-height: 1.4 !important;
+}
+
+table.status tr:last-child td,
+table.statusTable tr:last-child td,
+table.data tr:last-child td,
+table.hostStatus tr:last-child td,
+table.serviceStatus tr:last-child td {
+  border-bottom: 0 !important;
+}
+
+table.status tr:hover td,
+table.statusTable tr:hover td,
+table.data tr:hover td,
+table.hostStatus tr:hover td,
+table.serviceStatus tr:hover td {
+  background: #fafbfd !important;
+}
+
+/* Neutralize the old full-cell traffic-light backgrounds. */
+.statusBGOK,
+.statusOK,
+.statusBGWARNING,
+.statusWARNING,
+.statusBGCRITICAL,
+.statusCRITICAL,
+.statusBGUNKNOWN,
+.statusUNKNOWN,
+.statusBGPENDING,
+.statusPENDING,
+.statusHOSTUP,
+.statusHOSTDOWN,
+.statusHOSTUNREACHABLE,
+.statusHOSTPENDING {
+  background: #fff !important;
+  background-color: #fff !important;
+  color: var(--ui-text) !important;
+  border-color: #edf0f2 !important;
+}
+
+/* Status badge inserted by upzilla.js. */
+.elastic2ls-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 62px;
+  box-sizing: border-box;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.2;
+  letter-spacing: .025em;
+  white-space: nowrap;
+}
+
+.elastic2ls-status-badge::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.elastic2ls-status-ok {
+  color: var(--ui-ok) !important;
+  background: var(--ui-ok-bg) !important;
+}
+
+.elastic2ls-status-warning {
+  color: var(--ui-warning) !important;
+  background: var(--ui-warning-bg) !important;
+}
+
+.elastic2ls-status-critical,
+.elastic2ls-status-down,
+.elastic2ls-status-unreachable {
+  color: var(--ui-critical) !important;
+  background: var(--ui-critical-bg) !important;
+}
+
+.elastic2ls-status-unknown {
+  color: var(--ui-unknown) !important;
+  background: var(--ui-unknown-bg) !important;
+}
+
+.elastic2ls-status-pending {
+  color: var(--ui-pending) !important;
+  background: var(--ui-pending-bg) !important;
+}
+
+.elastic2ls-status-up {
+  color: var(--ui-ok) !important;
+  background: var(--ui-ok-bg) !important;
+}
+
+/* Host names should visually anchor groups, similar to uptime dashboards. */
+td.elastic2ls-host-cell,
+td.elastic2ls-host-cell a {
+  color: #242a33 !important;
+  font-weight: 650 !important;
+}
+
+/* Long plugin output should be readable but secondary. */
+td.elastic2ls-output-cell {
+  color: #626a75 !important;
+  font-size: 12px !important;
+}
+
+/* -------------------------------------------------------------------------
+ * Inputs / buttons
+ * ---------------------------------------------------------------------- */
+input[type="text"],
+input[type="password"],
+input[type="search"],
+select,
+textarea {
+  box-sizing: border-box;
+  min-height: 34px;
+  padding: 7px 10px !important;
+  background: #fff !important;
+  color: #262c35 !important;
+  border: 1px solid var(--ui-border-strong) !important;
+  border-radius: 7px !important;
+  font: inherit !important;
+  outline: none;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="search"]:focus,
+select:focus,
+textarea:focus {
+  border-color: #8b9bbd !important;
+  box-shadow: 0 0 0 3px rgba(65, 88, 140, .10) !important;
+}
+
+input[type="submit"],
+input[type="button"],
+button,
+.button {
+  min-height: 34px;
+  padding: 7px 12px !important;
+  background: #fff !important;
+  color: #303640 !important;
+  border: 1px solid var(--ui-border-strong) !important;
+  border-radius: 7px !important;
+  box-shadow: var(--ui-shadow);
+  font: inherit !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+}
+
+input[type="submit"]:hover,
+input[type="button"]:hover,
+button:hover,
+.button:hover {
+  background: #f7f8fa !important;
+}
+
+/* -------------------------------------------------------------------------
+ * Main splash / default page
+ * ---------------------------------------------------------------------- */
+#splashpage,
+#main.dark,
+#main.light {
+  background: var(--ui-bg) !important;
+  color: var(--ui-text) !important;
+}
+
+#currentversioninfo,
+#mainsplash,
+#mainfooter {
+  background: var(--ui-panel) !important;
+  color: var(--ui-text) !important;
+  border-color: var(--ui-border) !important;
+  border-radius: var(--ui-radius) !important;
+  box-shadow: var(--ui-shadow);
+}
+
+#mainfooter {
+  color: var(--ui-muted) !important;
+}
+
+/* Legacy alert colors: keep semantics, reduce visual weight. */
+.warningMessage,
+.warningmessage,
+.errorMessage,
+.errormessage {
+  border-radius: 7px !important;
+}
+
+/* Avoid horizontal overflow in plugin output/status tables. */
+body.elastic2ls-modern-ui {
+  overflow-x: auto;
+}
+
+body.elastic2ls-modern-ui table {
+  max-width: calc(100% - 48px);
+}
