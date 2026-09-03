@@ -18,7 +18,7 @@ spec:
   round_robin: true
   proxy_entity_name: pi.elastic2ls.com
   subscriptions:
-  - monitoring
+  - external
 ---
 type: CheckConfig
 api_version: core/v2
@@ -39,7 +39,7 @@ spec:
   round_robin: true
   proxy_entity_name: pi.elastic2ls.com
   subscriptions:
-  - monitoring
+  - external
 ---
 type: CheckConfig
 api_version: core/v2
@@ -59,7 +59,7 @@ spec:
   round_robin: true
   proxy_entity_name: pi.elastic2ls.com
   subscriptions:
-  - monitoring
+  - external
 ---
 type: CheckConfig
 api_version: core/v2
@@ -80,7 +80,7 @@ spec:
   round_robin: true
   proxy_entity_name: pi.elastic2ls.com
   subscriptions:
-  - monitoring
+  - external
 ---
 type: CheckConfig
 api_version: core/v2
@@ -101,7 +101,7 @@ spec:
   round_robin: true
   proxy_entity_name: pi.elastic2ls.com
   subscriptions:
-  - monitoring
+  - internal
 ---
 type: CheckConfig
 api_version: core/v2
@@ -122,4 +122,4 @@ spec:
   round_robin: true
   proxy_entity_name: pi.elastic2ls.com
   subscriptions:
-  - monitoring
+  - internal

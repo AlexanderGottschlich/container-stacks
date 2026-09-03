@@ -141,3 +141,31 @@ The migration deliberately preserves TLS hostname verification. If a target curr
 ## Docker Compose compatibility
 
 The scripts automatically detect whether the host provides Docker Compose v2 (`docker compose`) or the legacy standalone binary (`docker-compose`). The compose YAML intentionally avoids `gw_priority`, because legacy docker-compose does not support that key. The dedicated `sensu_egress` network is attached afterwards by `start-sensu.sh` with Docker Engine's `--gw-priority 1` option.
+## Networking
+
+The stack uses two check agents so no Docker `gw_priority` support is required:
+
+- `sensu-agent-external` joins only `sensu_net` and runs subscription `external`. All public DNS, HTTP, TLS and TCP checks run here. In particular, checks against the Docker host public IP do not originate from `proxy_net`, avoiding the same hairpin/DNAT problem seen with Nagios.
+- `sensu-agent-internal` joins `sensu_net` and the existing external `proxy_net` and runs subscription `internal`. Only the Pi-hole and Unbound DNS checks run here, using Docker DNS names `pihole` and `unbound`.
+
+No `sensu_egress` network and no `docker network connect --gw-priority` are used. This works with legacy `docker-compose` and older Docker Engines.
+
+### Start
+
+```bash
+cp .env.example .env
+# set the current Sensu admin password in .env
+./scripts/start-sensu.sh
+```
+
+To re-apply YAML resources later:
+
+```bash
+./scripts/apply-config.sh
+```
+
+or via the Compose wrapper:
+
+```bash
+./scripts/compose.sh run --rm sensu-config
+```

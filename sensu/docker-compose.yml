@@ -28,14 +28,17 @@ services:
       - "traefik.http.routers.sensu.tls.certresolver=le"
       - "traefik.http.services.sensu.loadbalancer.server.port=3000"
 
-  sensu-agent:
+  # Public/external checks. This agent deliberately does NOT join proxy_net.
+  # Its traffic to the host's public IP therefore leaves via sensu_net instead
+  # of trying to hairpin through the Traefik-facing bridge.
+  sensu-agent-external:
     build:
       context: .
       dockerfile: Dockerfile.agent
       args:
         SENSU_VERSION: ${SENSU_VERSION:-6.14.2}
     image: elastic2ls/sensu-agent:${SENSU_VERSION:-6.14.2}
-    container_name: sensu-agent
+    container_name: sensu-agent-external
     restart: unless-stopped
     depends_on:
       - sensu-backend
@@ -43,18 +46,41 @@ services:
       TZ: Europe/Berlin
     command: >
       sensu-agent start
-      --name monitoring-proxy
+      --name monitoring-external
       --backend-url ws://sensu-backend:8081
-      --subscriptions monitoring
+      --subscriptions external
       --cache-dir /var/lib/sensu
     volumes:
-      - sensu_agent_state:/var/lib/sensu
-    # sensu_egress is attached by scripts/start-sensu.sh afterwards with
-    # --gw-priority 1. This keeps the compose file compatible with legacy
-    # docker-compose while preserving the dedicated public egress route.
+      - sensu_agent_external_state:/var/lib/sensu
     networks:
-      - proxy_net
       - sensu_net
+
+  # Internal Docker-network checks. This agent can resolve/reach containers on
+  # proxy_net (currently pihole and unbound) but receives no public checks.
+  sensu-agent-internal:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+      args:
+        SENSU_VERSION: ${SENSU_VERSION:-6.14.2}
+    image: elastic2ls/sensu-agent:${SENSU_VERSION:-6.14.2}
+    container_name: sensu-agent-internal
+    restart: unless-stopped
+    depends_on:
+      - sensu-backend
+    environment:
+      TZ: Europe/Berlin
+    command: >
+      sensu-agent start
+      --name monitoring-internal
+      --backend-url ws://sensu-backend:8081
+      --subscriptions internal
+      --cache-dir /var/lib/sensu
+    volumes:
+      - sensu_agent_internal_state:/var/lib/sensu
+    networks:
+      - sensu_net
+      - proxy_net
 
   # One-shot Configuration-as-Code loader.
   sensu-config:
@@ -82,4 +108,5 @@ networks:
 
 volumes:
   sensu_state:
-  sensu_agent_state:
+  sensu_agent_external_state:
+  sensu_agent_internal_state:
