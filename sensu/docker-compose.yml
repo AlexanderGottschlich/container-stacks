@@ -6,16 +6,14 @@ services:
     container_name: sensu-backend
     restart: unless-stopped
     networks:
-      proxy_net:
-        gw_priority: 0
-      sensu_net:
-        gw_priority: 0
+      - proxy_net
+      - sensu_net
     volumes:
       - sensu_state:/var/lib/sensu
     environment:
       TZ: Europe/Berlin
-      # For a new backend these bootstrap the first admin account.
-      # On an existing initialized volume they do not change the password.
+      # Used only to bootstrap a NEW backend. Existing credentials in
+      # sensu_state are not changed by these variables.
       SENSU_BACKEND_CLUSTER_ADMIN_USERNAME: ${SENSU_ADMIN_USER}
       SENSU_BACKEND_CLUSTER_ADMIN_PASSWORD: ${SENSU_ADMIN_PASS}
     command: >
@@ -51,20 +49,14 @@ services:
       --cache-dir /var/lib/sensu
     volumes:
       - sensu_agent_state:/var/lib/sensu
+    # sensu_egress is attached by scripts/start-sensu.sh afterwards with
+    # --gw-priority 1. This keeps the compose file compatible with legacy
+    # docker-compose while preserving the dedicated public egress route.
     networks:
-      # Required to resolve/reach the pihole and unbound containers directly.
-      proxy_net:
-        gw_priority: 0
-      # Direct connection to the Sensu backend.
-      sensu_net:
-        gw_priority: 0
-      # Default route for public checks. This mirrors the Nagios egress fix and
-      # avoids reaching the host's own public services via proxy_net.
-      sensu_egress:
-        gw_priority: 1
+      - proxy_net
+      - sensu_net
 
-  # One-shot Configuration-as-Code loader. Run with:
-  #   docker compose run --rm sensu-config
+  # One-shot Configuration-as-Code loader.
   sensu-config:
     image: sensu/sensu:${SENSU_VERSION:-6.14.2}
     container_name: sensu-config
@@ -86,8 +78,6 @@ networks:
   proxy_net:
     external: true
   sensu_net:
-    driver: bridge
-  sensu_egress:
     driver: bridge
 
 volumes:

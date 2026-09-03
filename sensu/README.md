@@ -49,6 +49,7 @@ There are 34 Sensu checks in total. Five of them represent the Nagios host-level
 │       └── yt2.yml
 └── scripts/
     ├── apply-config.sh
+    ├── compose.sh
     └── start-sensu.sh
 ```
 
@@ -64,7 +65,7 @@ Set `SENSU_ADMIN_PASS` to the password that is **currently stored in Sensu**. If
 
 The stack assumes the existing external Docker network `proxy_net` exists. The Sensu agent joins that network so it can query the `pihole` and `unbound` containers by Docker DNS name.
 
-The agent also joins `sensu_egress`, which has the higher gateway priority. This intentionally mirrors the dedicated Nagios egress network so checks against `152.53.46.232` leave through a separate Docker bridge instead of `proxy_net`.
+The agent also joins `sensu_egress`. For compatibility with legacy `docker-compose`, this network is attached by `scripts/start-sensu.sh` after container startup using `docker network connect --gw-priority 1`. This mirrors the dedicated Nagios egress network so checks against `152.53.46.232` leave through a separate Docker bridge instead of `proxy_net`.
 
 ## Start and load all checks
 
@@ -82,7 +83,7 @@ The script:
 For later configuration-only changes:
 
 ```bash
-docker compose run --rm sensu-config
+./scripts/compose.sh run --rm sensu-config
 ```
 
 This executes:
@@ -98,25 +99,25 @@ so the repository remains the intended source of truth.
 List checks:
 
 ```bash
-docker compose run --rm sensu-config
+./scripts/compose.sh run --rm sensu-config
 ```
 
 Agent logs:
 
 ```bash
-docker compose logs -f sensu-agent
+./scripts/compose.sh logs -f sensu-agent
 ```
 
 Backend logs:
 
 ```bash
-docker compose logs -f sensu-backend
+./scripts/compose.sh logs -f sensu-backend
 ```
 
 Show services:
 
 ```bash
-docker compose ps
+./scripts/compose.sh ps
 ```
 
 ## Check intervals
@@ -135,3 +136,8 @@ Sensu does not model Nagios host/service states or `max_check_attempts` in the s
 ## Expected existing failures
 
 The migration deliberately preserves TLS hostname verification. If a target currently has a hostname/certificate mismatch, the corresponding Sensu check will remain CRITICAL rather than masking the problem.
+
+
+## Docker Compose compatibility
+
+The scripts automatically detect whether the host provides Docker Compose v2 (`docker compose`) or the legacy standalone binary (`docker-compose`). The compose YAML intentionally avoids `gw_priority`, because legacy docker-compose does not support that key. The dedicated `sensu_egress` network is attached afterwards by `start-sensu.sh` with Docker Engine's `--gw-priority 1` option.
