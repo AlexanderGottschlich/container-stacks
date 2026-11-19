@@ -1,0 +1,12 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":dependencyDashboard", "docker:pinDigests"],
+  "enabledManagers": ["docker-compose", "dockerfile", "github-actions"],
+  "timezone": "Europe/Berlin",
+  "schedule": ["before 6am on monday through friday"],
+  "vulnerabilityAlerts": {"enabled": true},
+  "packageRules": [
+    {"matchManagers": ["docker-compose", "dockerfile"], "matchUpdateTypes": ["minor", "patch"], "groupName": "Docker patch and minor upgrades"},
+    {"matchUpdateTypes": ["major"], "dependencyDashboardApproval": true}
+  ]
+}
