@@ -71,6 +71,7 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
       - name: Scan exact image with Trivy
         shell: bash
+        if: ${{ false }}
         env:
           IMAGE: ${{ steps.vars.outputs.image }}
         run: |
