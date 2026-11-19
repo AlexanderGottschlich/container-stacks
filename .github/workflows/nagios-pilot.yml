@@ -66,7 +66,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Build exactly once and load into local Docker
       - name: Build Nagios image
         uses: docker/build-push-action@v6
         with:
@@ -80,6 +79,9 @@ jobs:
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha,scope=nagios
+          cache-to: type=gha,scope=nagios,mode=max
+
 
       - name: Verify local image
         shell: bash
@@ -110,7 +112,6 @@ jobs:
             "$IMAGE"
 
       # Publish the same locally built and scanned image
-      # No second docker build
       - name: Publish Nagios image to GHCR
         shell: bash
         env:
