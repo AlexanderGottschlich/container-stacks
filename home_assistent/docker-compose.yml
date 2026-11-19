@@ -3,8 +3,10 @@ services:
     image: ghcr.io/home-assistant/home-assistant:stable
     container_name: homeassistant
     restart: unless-stopped
-    network_mode: host
+#    network_mode: host
     privileged: true
+    ports:
+      - "8123:8123"
     environment:
       TZ: Europe/Berlin
     volumes:

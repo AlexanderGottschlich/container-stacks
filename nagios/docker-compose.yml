@@ -2,14 +2,10 @@ version: "3.8"
 
 services:
   nagios:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        NAGIOS_VERSION: "4.5.14"
-        NAGIOS_PLUGINS_VERSION: "2.5"
-
-    image: elastic2ls/nagios:4.5.14
+    # Image is built and scanned in GitHub Actions, then published to GHCR.
+    # For manual legacy startup, the old image remains the default.
+    # Production GHCR deployment always sets NAGIOS_IMAGE explicitly.
+    image: ${NAGIOS_IMAGE:-elastic2ls/nagios:4.5.14}
     container_name: nagios
     restart: unless-stopped
 
