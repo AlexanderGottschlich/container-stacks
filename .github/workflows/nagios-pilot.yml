@@ -212,7 +212,6 @@ jobs:
 
       # Disabled until Nagios-specific deployment is validated
       - name: Deploy approved Nagios image
-        if: ${{ false }}
         shell: bash
         env:
           DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
