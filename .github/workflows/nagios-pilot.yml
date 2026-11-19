@@ -95,7 +95,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && inputs.deploy == true
     needs: publish
     runs-on: ubuntu-latest
-    environment: production
+    environment: Naboo
     permissions:
       contents: read
     steps:
