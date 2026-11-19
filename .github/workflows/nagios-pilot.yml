@@ -11,7 +11,7 @@ jobs:
   test-ssh:
     name: Test SSH connection to production
     runs-on: ubuntu-latest
-    environment: production
+    environment: Naboo
 
     timeout-minutes: 5
 
