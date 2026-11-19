@@ -1,154 +1,31 @@
 
-name: Nagios - build scan publish deploy pilot
+name: Nagios - SSH connectivity test
 
 on:
   workflow_dispatch:
-    inputs:
-      deploy:
-        description: "Deploy to production after successful publish?"
-        required: true
-        type: boolean
-        default: false
-
-  push:
-    branches:
-      - main
-    paths:
-      - "nagios/**"
-      - "scripts/deploy-nagios-ghcr.sh"
-      - ".github/workflows/nagios-pilot.yml"
 
 permissions:
   contents: read
 
-concurrency:
-  group: nagios-pilot-production
-  cancel-in-progress: false
-
 jobs:
-  publish:
-    name: Build, scan and publish Nagios
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      packages: write
-
-    outputs:
-      image: ${{ steps.vars.outputs.image }}
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set image coordinates
-        id: vars
-        shell: bash
-        env:
-          OWNER: ${{ github.repository_owner }}
-          SHA: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-
-          IMAGE="ghcr.io/${OWNER,,}/container-stacks-nagios:sha-${SHA}"
-
-          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
-          echo "Publishing image: $IMAGE"
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build Nagios image
-        if: ${{ false }}
-        uses: docker/build-push-action@v6
-        with:
-          context: ./nagios
-          file: ./nagios/Dockerfile
-          platforms: linux/amd64
-          pull: true
-          push: false
-          load: true
-          tags: ${{ steps.vars.outputs.image }}
-          labels: |
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
-
-      - name: Scan Nagios image with Trivy
-        id: trivy
-        if: ${{ false }}
-        shell: bash
-        env:
-          IMAGE: ${{ steps.vars.outputs.image }}
-        run: |
-          set -euo pipefail
-
-          docker run --rm \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            aquasec/trivy:0.67.2 image \
-            --scanners vuln \
-            --severity CRITICAL,HIGH \
-            --exit-code 1 \
-            "$IMAGE"
-
-      - name: Publish Nagios image to GHCR
-        if: success()
-        uses: docker/build-push-action@v6
-        with:
-          context: ./nagios
-          file: ./nagios/Dockerfile
-          platforms: linux/amd64
-          pull: true
-          push: true
-          tags: ${{ steps.vars.outputs.image }}
-          labels: |
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
-
-  deploy:
-    name: Deploy Nagios to production
-    if: github.event_name == 'workflow_dispatch' && inputs.deploy == true
-    needs: publish
-
+  test-ssh:
+    name: Test SSH connection to production
     runs-on: ubuntu-latest
     environment: production
-    permissions:
-      contents: read
+
+    timeout-minutes: 5
 
     steps:
-      - name: Configure SSH
+      - name: Validate deployment configuration
         shell: bash
         env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
           DEPLOY_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
         run: |
           set -euo pipefail
 
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-
-          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/id_ed25519
-          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
-
-          chmod 600 ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/known_hosts
-
-
-      - name: Verify SSH connection
-        shell: bash
-        env:
-          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
-          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
-        run: |
-          set -euo pipefail
-
-          # Validate environment variables
           if [[ -z "${DEPLOY_HOST:-}" ]]; then
             echo "::error::DEPLOY_HOST is missing"
             exit 1
@@ -159,63 +36,63 @@ jobs:
             exit 1
           fi
 
-          echo "Deployment user: $DEPLOY_USER"
-          echo "SSH target variables are configured"
+          if [[ -z "${DEPLOY_KEY:-}" ]]; then
+            echo "::error::DEPLOY_SSH_KEY is missing"
+            exit 1
+          fi
 
-          # Test SSH connection
+          if [[ -z "${KNOWN_HOSTS:-}" ]]; then
+            echo "::error::DEPLOY_KNOWN_HOSTS is missing"
+            exit 1
+          fi
+
+          echo "Deployment configuration is complete."
+          echo "SSH user: $DEPLOY_USER"
+
+      - name: Configure SSH
+        shell: bash
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p "$HOME/.ssh"
+          chmod 700 "$HOME/.ssh"
+
+          printf '%s\n' "$DEPLOY_KEY" \
+            > "$HOME/.ssh/id_ed25519"
+
+          printf '%s\n' "$KNOWN_HOSTS" \
+            > "$HOME/.ssh/known_hosts"
+
+          chmod 600 "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+          # Verify private SSH key format
+          ssh-keygen -y \
+            -f "$HOME/.ssh/id_ed25519" \
+            > /dev/null
+
+          echo "SSH identity configured successfully."
+
+      - name: Test SSH connection
+        shell: bash
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+
+          echo "Testing SSH connection..."
+
           ssh \
+            -i "$HOME/.ssh/id_ed25519" \
+            -o IdentitiesOnly=yes \
             -o BatchMode=yes \
             -o StrictHostKeyChecking=yes \
             -o ConnectTimeout=10 \
             "${DEPLOY_USER}@${DEPLOY_HOST}" \
             'whoami && hostname && pwd && id'
 
-
-      - name: Deploy approved Nagios image#
-        if: ${{ false }}
-        shell: bash
-        env:
-          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
-          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
-          IMAGE: ${{ needs.publish.outputs.image }}
-          COMMIT_SHA: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-
-          ssh \
-            -o BatchMode=yes \
-            -o StrictHostKeyChecking=yes \
-            "$DEPLOY_USER@$DEPLOY_HOST" \
-            bash -s -- "$IMAGE" "$COMMIT_SHA" <<'REMOTE'
-          set -euo pipefail
-
-          IMAGE="$1"
-          COMMIT_SHA="$2"
-
-          # Validate commit and image reference
-          [[ "$COMMIT_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
-          [[ "$IMAGE" =~ ^ghcr\.io/[a-z0-9_./-]+:sha-[0-9a-f]{40}$ ]] || exit 1
-          [[ "$IMAGE" == *":sha-$COMMIT_SHA" ]] || exit 1
-
-          # Repository is the single deployment source
-          cd /opt/container-stacks
-
-          # Fetch current Git state
-          git fetch origin main
-
-          # Commit must belong to main
-          git merge-base --is-ancestor "$COMMIT_SHA" origin/main
-
-          # Prevent overwriting local changes
-          if [[ -n "$(git status --porcelain)" ]]; then
-            echo "ERROR: Working tree is not clean."
-            exit 1
-          fi
-
-          # Deploy exactly the GitHub Actions revision
-          git checkout --detach "$COMMIT_SHA"
-
-          # Execute deployment script from repository
-          bash scripts/deploy-nagios-ghcr.sh "$IMAGE"
-
-          REMOTE
+          echo "SSH connection successful."
