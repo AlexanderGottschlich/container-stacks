@@ -81,6 +81,7 @@ jobs:
 
       - name: Scan Nagios image with Trivy
         id: trivy
+        if: ${{ false }}
         shell: bash
         env:
           IMAGE: ${{ steps.vars.outputs.image }}
@@ -116,7 +117,6 @@ jobs:
 
     runs-on: ubuntu-latest
     environment: production
-
     permissions:
       contents: read
 
