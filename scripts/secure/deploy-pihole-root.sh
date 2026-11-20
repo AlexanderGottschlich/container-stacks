@@ -66,10 +66,12 @@ if start_service && verify; then
 else
   echo 'Deployment/check failed; attempting rollback' >&2
   export PIHOLE_IMAGE=pihole-rollback:previous
-  if start_service && verify_rollback="$(docker inspect pihole --format '{{.State.Running}}')" && [[ "$verify_rollback" == true ]]; then
-    echo 'Rollback completed; investigate update failure' >&2
+
+  if start_service && verify; then
+    echo 'Rollback completed and DNS verified' >&2
   else
     echo 'ROLLBACK FAILED; manual intervention required' >&2
   fi
+
   exit 1
 fi
