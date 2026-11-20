@@ -17,13 +17,14 @@
   },
   "packageRules": [
     {
-      "description": "Group minor and patch Docker updates, excluding Pi-hole",
+      "description": "Group minor and patch Docker updates, excluding Pi-hole and Unbound",
       "matchManagers": [
         "docker-compose",
         "dockerfile"
       ],
       "matchPackageNames": [
-        "!pihole/pihole"
+        "!pihole/pihole",
+        "!klutchell/unbound"
       ],
       "matchUpdateTypes": [
         "minor",
@@ -46,6 +47,23 @@
         "dependencies",
         "docker",
         "pihole"
+      ]
+    },
+    {
+      "description": "Unbound updates require their own manually approved PR",
+      "matchManagers": [
+        "docker-compose"
+      ],
+      "matchPackageNames": [
+        "klutchell/unbound"
+      ],
+      "groupName": "Unbound updates",
+      "pinDigests": true,
+      "automerge": false,
+      "labels": [
+        "dependencies",
+        "docker",
+        "unbound"
       ]
     },
     {
