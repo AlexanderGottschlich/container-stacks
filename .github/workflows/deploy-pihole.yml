@@ -1,46 +1,61 @@
 name: Pi-hole - deploy merged Renovate digest
-
 on:
   push:
     branches: [main]
-    paths:
-      - "pihole/docker-compose.yml"
+    paths: ["pihole/docker-compose.yml"]
   workflow_dispatch:
     inputs:
       execute:
-        description: "Actually recreate Pi-hole? false = check only"
+        description: 'Actually recreate Pi-hole? false = check only'
         type: boolean
         required: true
         default: false
-
 permissions:
   contents: read
-
 concurrency:
   group: pihole-production
   cancel-in-progress: false
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: Naboo
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Determine whether the Pi-hole image changed
+        id: changes
+        shell: bash
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          changed=true
+          if [[ "${{ github.event_name }}" == push ]]; then
+            old=$(git show "$BEFORE:pihole/docker-compose.yml" 2>/dev/null | sed -nE 's|^    image: (pihole/pihole:[^[:space:]]+).*$|\1|p' || true)
+            new=$(sed -nE 's|^    image: (pihole/pihole:[^[:space:]]+).*$|\1|p' pihole/docker-compose.yml)
+            [[ -n "$old" && "$old" != "$new" ]] || changed=false
+          fi
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
       - name: Extract approved image and normalized Compose hash
+        if: steps.changes.outputs.changed == 'true'
         id: approved
         shell: bash
         run: |
           set -euo pipefail
           COMPOSE=pihole/docker-compose.yml
-          IMAGE="$(sed -nE 's|^    image: (pihole/pihole:[^[:space:]]+)[[:space:]]*$|\1|p' "$COMPOSE")"
-          [[ "$IMAGE" =~ ^pihole/pihole:[a-zA-Z0-9._-]+@sha256:[a-f0-9]{64}$ ]] || {
-            echo 'Expected one pinned Pi-hole image (tag@sha256:digest)'; exit 1;
-          }
-          [[ "$(grep -Ec '^    image: pihole/pihole:' "$COMPOSE")" == 1 ]] || exit 1
-          HASH="$(sed -E 's|^    image: pihole/pihole:[^[:space:]]+[[:space:]]*$|    image: ${PIHOLE_IMAGE}|' "$COMPOSE" | sha256sum | awk '{print $1}')"
+          IMAGE=$(sed -nE 's|^    image: (pihole/pihole:[^[:space:]]+)[[:space:]]*$|\1|p' "$COMPOSE")
+          [[ "$IMAGE" =~ ^pihole/pihole:[a-zA-Z0-9._-]+@sha256:[a-f0-9]{64}$ ]] || { echo 'Expected digest-pinned Pi-hole image' >&2; exit 1; }
+          [[ $(grep -Ec '^    image: pihole/pihole:' "$COMPOSE") == 1 ]] || exit 1
+          # shellcheck disable=SC2016
+          HASH=$(sed -E \
+            -e 's|^    image: pihole/pihole:[^[:space:]]+[[:space:]]*$|    image: ${PIHOLE_IMAGE}|' \
+            -e 's|^    image: klutchell/unbound:[^[:space:]]+[[:space:]]*$|    image: ${UNBOUND_IMAGE}|' \
+            "$COMPOSE" | sha256sum | awk '{print $1}')
           echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
           echo "config_sha=$HASH" >> "$GITHUB_OUTPUT"
       - name: Configure SSH
+        if: steps.changes.outputs.changed == 'true'
         shell: bash
         env:
           DEPLOY_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
@@ -58,6 +73,7 @@ jobs:
           chmod 600 "$HOME/.ssh/id_ed25519" "$HOME/.ssh/known_hosts"
           ssh-keygen -y -f "$HOME/.ssh/id_ed25519" >/dev/null
       - name: Validate protected Pi-hole configuration
+        if: steps.changes.outputs.changed == 'true'
         shell: bash
         env:
           DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
@@ -70,7 +86,7 @@ jobs:
             "$DEPLOY_USER@$DEPLOY_HOST" \
             "sudo -n /opt/container-stacks-secure/bin/deploy-pihole --check '$IMAGE' '$HASH'"
       - name: Deploy approved Pi-hole image
-        if: github.event_name == 'push' || inputs.execute == true
+        if: steps.changes.outputs.changed == 'true' && (github.event_name == 'push' || inputs.execute == true)
         shell: bash
         env:
           DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
