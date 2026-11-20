@@ -98,8 +98,22 @@ probe_pihole() {
   # A unique name avoids a misleading positive result from Pi-hole's stale cache.
   probe="health-$(cat /proc/sys/kernel/random/uuid).example.org"
   response=$(dig @192.168.6.1 "$probe" A +time=3 +tries=1) || return 1
-  [[ $response == *'status: NXDOMAIN'* ]] || return 1
+
+  # Reject stale DNS answers.
   [[ $response != *'EDE: 3 (Stale Answer)'* ]] || return 1
+
+  # NXDOMAIN is a valid negative DNS response.
+  if [[ $response == *'status: NXDOMAIN'* ]]; then
+    return 0
+  fi
+
+  # NOERROR with zero answers is a valid NODATA response.
+  if [[ $response == *'status: NOERROR'* ]] &&
+     grep -Eq '^;; flags: .*ANSWER: 0,' <<<"$response"; then
+    return 0
+  fi
+
+  return 1
 }
 
 healthcheck() {
