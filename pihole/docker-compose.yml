@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   pihole:
-    image: pihole/pihole:latest
+    image: pihole/pihole:latest@sha256:66c798d79a95c2691f280329c3611dba1746117c61c9f331907ca35a06a52778
     container_name: pihole
     restart: unless-stopped
     environment:
