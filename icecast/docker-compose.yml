@@ -1,6 +1,6 @@
 services:
   icecast:
-    image: moul/icecast:latest
+    image: moul/icecast:latest@sha256:b35cd6367327335b51b989c277e6feaff7cd61d65846ec7fee361c6eb1cea620
     platform: linux/amd64
     container_name: icecast
     restart: unless-stopped
@@ -22,7 +22,7 @@ services:
       - mediahub_net
 
   liquidsoap_radio:
-    image: savonet/liquidsoap:v2.3.0
+    image: savonet/liquidsoap:v2.3.0@sha256:925b69f1f476c6bac9b111257f2cf064ba4187056797020d3b1f9913ff0d0e8c
     container_name: icecast-liquidsoap-radio
     restart: unless-stopped
     depends_on:

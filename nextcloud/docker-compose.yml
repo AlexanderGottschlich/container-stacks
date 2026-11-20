@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   db:
-    image: postgres:16-alpine
+    image: postgres:16-alpine@sha256:1d5b02d3a9941fbd52437db4107f8c52d6297dac553ca1e5c299ebb3756b4857
     restart: unless-stopped
     environment:
       POSTGRES_DB: nextcloud
@@ -14,13 +14,13 @@ services:
       - nc_net
 
   redis:
-    image: redis:7-alpine
+    image: redis:7-alpine@sha256:7f7d30b7fdd09467bac58198a1f166dd69789d348d4fe859cccb20e0cf287fbe
     restart: unless-stopped
     networks:
       - nc_net
 
   app:
-    image: nextcloud:32-apache
+    image: nextcloud:32-apache@sha256:c6b62c2c908049ae9671b68cf8c8997a11976dd5daad978131744825e8c07fcf
     restart: unless-stopped
     environment:
       POSTGRES_HOST: db
@@ -52,7 +52,7 @@ services:
       - "traefik.http.middlewares.nextcloud-dav.redirectregex.replacement=https://$${1}/remote.php/dav/"
       - "traefik.http.middlewares.nextcloud-dav.redirectregex.permanent=true"
   cron:
-    image: nextcloud:32-apache
+    image: nextcloud:32-apache@sha256:c6b62c2c908049ae9671b68cf8c8997a11976dd5daad978131744825e8c07fcf
     restart: unless-stopped
     entrypoint: /cron.sh
     environment:
