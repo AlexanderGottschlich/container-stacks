@@ -12,9 +12,6 @@
     "github-actions"
   ],
   "timezone": "Europe/Berlin",
-  "schedule": [
-    "before 6am on monday through friday"
-  ],
   "vulnerabilityAlerts": {
     "enabled": true
   },
