@@ -44,7 +44,7 @@ services:
       - "traefik.http.routers.pihole.middlewares=pihole-headers@docker"
 
   unbound:
-    image: klutchell/unbound:latest
+    image: klutchell/unbound:latest@sha256:de8e624f84337bdb2d16540c0b203d5df2a981180421cb50ab4212b67542d8b4
     container_name: unbound
     restart: unless-stopped
     networks:
