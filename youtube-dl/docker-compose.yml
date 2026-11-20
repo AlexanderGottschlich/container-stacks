@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   yt-dl:
-    image: kmb32123/youtube-dl-server:latest
+    image: kmb32123/youtube-dl-server:latest@sha256:7810311046f5c4c2f10a2f3a78731bf82d5ee195d01c254c54de6cff9756bbac
     container_name: yt-dl
     restart: unless-stopped
 
