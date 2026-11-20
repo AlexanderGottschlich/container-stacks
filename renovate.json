@@ -1,12 +1,63 @@
+
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended", ":dependencyDashboard", "docker:pinDigests"],
-  "enabledManagers": ["docker-compose", "dockerfile", "github-actions"],
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    "docker:pinDigests"
+  ],
+  "enabledManagers": [
+    "docker-compose",
+    "dockerfile",
+    "github-actions"
+  ],
   "timezone": "Europe/Berlin",
-  "schedule": ["before 6am on monday through friday"],
-  "vulnerabilityAlerts": {"enabled": true},
+  "schedule": [
+    "before 6am on monday through friday"
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true
+  },
   "packageRules": [
-    {"matchManagers": ["docker-compose", "dockerfile"], "matchUpdateTypes": ["minor", "patch"], "groupName": "Docker patch and minor upgrades"},
-    {"matchUpdateTypes": ["major"], "dependencyDashboardApproval": true}
+    {
+      "description": "Group minor and patch Docker updates, excluding Pi-hole",
+      "matchManagers": [
+        "docker-compose",
+        "dockerfile"
+      ],
+      "matchPackageNames": [
+        "!pihole/pihole"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "Docker patch and minor upgrades"
+    },
+    {
+      "description": "Pi-hole updates require manual PR approval",
+      "matchManagers": [
+        "docker-compose"
+      ],
+      "matchPackageNames": [
+        "pihole/pihole"
+      ],
+      "groupName": "Pi-hole updates",
+      "pinDigests": true,
+      "automerge": false,
+      "labels": [
+        "dependencies",
+        "docker",
+        "pihole"
+      ]
+    },
+    {
+      "description": "Major updates require Dependency Dashboard approval",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "dependencyDashboardApproval": true,
+      "automerge": false
+    }
   ]
 }
